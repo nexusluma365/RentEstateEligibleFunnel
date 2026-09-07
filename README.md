@@ -40,8 +40,6 @@ Functions directory: netlify/functions
 STRIPE_PUBLISHABLE_KEY
 STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
-STRIPE_PRICE_MONTHLY
-STRIPE_PRICE_ANNUAL
 EMAIL_LINK_SECRET
 GOOGLE_SCRIPT_URL
 GOOGLE_PLACES_API_KEY
@@ -57,7 +55,7 @@ After the first deploy, add the Stripe webhook endpoint:
 https://YOUR_NETLIFY_DOMAIN/.netlify/functions/stripe-webhook
 ```
 
-Send these Stripe events: `payment_intent.succeeded`, `customer.subscription.created`, `customer.subscription.updated`, and `customer.subscription.deleted`.
+Send this Stripe event: `payment_intent.succeeded`.
 
 ## Production Flow
 

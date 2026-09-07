@@ -2,19 +2,15 @@
 
 This pass replaced the old Stripe Payment Link setup with a real backend:
 Netlify Functions + Stripe's server-side API, so the $10 pre-screen is the
-only place a card is ever typed, and every step after it is a genuine
+only place a card is ever typed, and the $27 apartment upsell is a genuine
 one-click charge against the saved payment method — server-verified, not
 just a frontend flag.
 
 ```
 Questionnaire → $10 Pre-Screen (card entered once)
               → Results
-              → $27 Modern/Luxury List   (one click, saved card)
+              → $27 Modern/Luxury List (one click, saved card)
               → Verified apartment results + email delivery
-              → $27 Game Plan            (legacy one click, saved card)
-              → $97 Credit Action Kit    (one click, only when relevant)
-              → $297/yr or $35/mo Support (one click, real subscription)
-              → Thank You
 ```
 
 ## 1) Install dependencies
@@ -33,8 +29,6 @@ in `/netlify/functions`.
 | `STRIPE_PUBLISHABLE_KEY` | Stripe Dashboard → Developers → API keys. Public key served to the browser by `/.netlify/functions/config`. |
 | `STRIPE_SECRET_KEY` | Stripe Dashboard → Developers → API keys. **Secret key — server only, never in frontend code.** |
 | `STRIPE_WEBHOOK_SECRET` | Created in step 4 below. |
-| `STRIPE_PRICE_MONTHLY` | A **recurring** Stripe Price, $35/month (Dashboard → Product catalog → create the RentReady Support product, add a monthly recurring price). |
-| `STRIPE_PRICE_ANNUAL` | Same product, a second recurring price, $297/year. |
 | `EMAIL_LINK_SECRET` | Any long random string (e.g. `openssl rand -hex 32`). Signs the time-limited links that go out in emails. |
 | `GOOGLE_SCRIPT_URL` | The Apps Script web app URL. It is used server-side by lead capture and email delivery functions, and is no longer hardcoded into public HTML. |
 | `GOOGLE_PLACES_API_KEY` | Google Maps Platform API key with Places API enabled. Required for verified Modern/Luxury apartment recommendations. Without it, the app will not invent apartment communities. |
@@ -57,14 +51,13 @@ using the private `GOOGLE_SCRIPT_URL` environment variable.
 1. Deploy the site to Netlify first (the webhook needs a real URL).
 2. Stripe Dashboard → Developers → Webhooks → **Add endpoint**.
 3. Endpoint URL: `https://YOURDOMAIN/.netlify/functions/stripe-webhook`
-4. Events to send: `payment_intent.succeeded`, `customer.subscription.created`,
-   `customer.subscription.updated`, `customer.subscription.deleted`.
+4. Event to send: `payment_intent.succeeded`.
 5. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
 
 This webhook is the backstop source of truth — the functions also write
 entitlements synchronously the moment Stripe confirms a charge, so the
 webhook mainly matters for 3-D-Secure completions that happen after the
-customer closes the tab, and for subscription renewals/cancellations.
+customer closes the tab.
 
 ## 5) Redeploy the Google Apps Script
 
@@ -101,7 +94,7 @@ Use Stripe's test keys and these card numbers on the $10 Payment Element:
 | `4242 4242 4242 4242` | Succeeds immediately, no 3DS. |
 | `4000 0025 0000 3155` | Requires 3-D Secure — confirms the `requires_action` handling on every step. |
 | `4000 0000 0000 9995` | Always declines — confirms the "we couldn't complete this purchase" + "Continue Without This" path. |
-| `4000 0000 0000 0341` | Succeeds on the $10 charge, then the *saved* card fails on later off-session charges — the most realistic test of the $27/$97/membership decline path. |
+| `4000 0000 0000 0341` | Succeeds on the $10 charge, then the *saved* card fails on the later off-session charge — the most realistic test of the $27 decline path. |
 
 Any future date for expiry, any 3 digits for CVC, any ZIP.
 
@@ -116,7 +109,6 @@ This mirrors the test list from the funnel spec:
 - [ ] Result renders immediately after payment, no upsell shown yet
 - [ ] Download My Results produces a PDF containing only the $10-tier content
 - [ ] Email My Results sends a working, time-limited link
-- [ ] $27 Game Plan one-click succeeds with the saved card (no card form appears)
 - [ ] Modern/Luxury option cards route to the premium page with the selected category
 - [ ] $27 Modern/Luxury one-click succeeds with the saved card (no card form appears)
 - [ ] Successful Modern/Luxury purchase renders Google Places-backed apartment results
@@ -124,11 +116,6 @@ This mirrors the test list from the funnel spec:
 - [ ] Modern/Luxury decline shows the short redirect message, continues to listings, and does not email the packet
 - [ ] $27 decline shows the message, then fades in "Continue Without This →"
 - [ ] $27 3DS card triggers the challenge and still completes correctly
-- [ ] $97 only appears when the questionnaire answers indicate a credit issue
-- [ ] $97 is rejected server-side (400) if attempted directly for a non-relevant profile
-- [ ] $97 success/decline/3DS mirror the $27 behavior
-- [ ] Monthly and yearly membership both create real Stripe Subscriptions
-- [ ] Subscription decline shows the message and routes to Thank You
 - [ ] Refreshing or hitting back on any page after payment still shows the correct (paid) state, via `get-entitlements`
 - [ ] Rapid double-clicking a purchase button never creates two charges (idempotency key + button lock)
 - [ ] Thank You page's message matches whatever was actually purchased — never claims something was emailed that wasn't
@@ -147,14 +134,13 @@ across every page, the lead-capture half of `code.gs`, and
   server-generated result PDF, email delivery).
 - `/assets/checkout-client.js` — shared frontend logic for the one-click
   purchase/3DS/entitlement calls used by `game-plan.html`,
-  `credit-action-package.html`, and `membership.html`. Purely behavioral —
+  apartment upsell pages. Purely behavioral —
   it doesn't style or render anything.
 - Server-guarded access checks and the unlocked result experience on
   `After Payment Results.html`.
 - Real one-click purchase buttons, `requires_action` (3DS) handling, and
   the "we couldn't complete this purchase" → fade-in "Continue Without
-  This →" pattern on `game-plan.html`, `credit-action-package.html`, and
-  `membership.html`.
+  This →" pattern on the apartment upsell pages.
 - `Luxury Apartment Upsell.html` and `Modern Apartment Upsell.html` — saved-card
   $27 apartment upsells that redirect to `Real-estate list.html` after payment
   succeeds or after the decline notice is shown.

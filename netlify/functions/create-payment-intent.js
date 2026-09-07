@@ -4,8 +4,8 @@
 // This is the ONLY place a customer ever types card details. It creates a
 // Stripe Customer (or reuses one already tied to this leadId), and a
 // PaymentIntent for $10 with `setup_future_usage: 'off_session'` so the
-// same card can be charged again later for the $27 / $97 / membership
-// steps without asking for it again.
+// same card can be charged again later for the $27 upsell without asking for
+// it again.
 const { getStripe } = require('./_lib/stripe');
 const { saveLead, patchEntitlements } = require('./_lib/store');
 
@@ -49,7 +49,7 @@ exports.handler = async (event) => {
       currency: 'usd',
       customer: customer.id,
       setup_future_usage: 'off_session',
-      automatic_payment_methods: { enabled: true },
+      automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
       metadata: { leadId, product: 'prescreen' },
     });
 
