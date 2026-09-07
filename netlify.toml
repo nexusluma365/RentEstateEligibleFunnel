@@ -1,0 +1,141 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+
+[build.processing]
+  skip_processing = false
+
+[build.processing.html]
+  pretty_urls = true
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/real estate images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[redirects]]
+  from = "/"
+  to = "/Renter LeadForm.html"
+  status = 200
+
+[[redirects]]
+  from = "/index.html"
+  to = "/Renter LeadForm.html"
+  status = 301
+
+[[redirects]]
+  from = "/renter-lead-form.html"
+  to = "/Renter LeadForm.html"
+  status = 200
+
+[[redirects]]
+  from = "/renter-lead-form"
+  to = "/Renter LeadForm.html"
+  status = 200
+
+[[redirects]]
+  from = "/rent-ready-network"
+  to = "/After Payment Results.html"
+  status = 200
+
+[[redirects]]
+  from = "/rent-ready-network.html"
+  to = "/After Payment Results.html"
+  status = 301
+
+[[redirects]]
+  from = "/results"
+  to = "/After Payment Results.html"
+  status = 200
+
+[[redirects]]
+  from = "/after-payment-results"
+  to = "/After Payment Results.html"
+  status = 200
+
+[[redirects]]
+  from = "/credit-action-package"
+  to = "/credit-action-package.html"
+  status = 200
+
+[[redirects]]
+  from = "/real-estate-list"
+  to = "/Real-estate list.html"
+  status = 200
+
+[[redirects]]
+  from = "/real-estate-list.html"
+  to = "/Real-estate list.html"
+  status = 200
+
+[[redirects]]
+  from = "/modern-apartment-premium"
+  to = "/Modern Apartment Upsell.html"
+  status = 200
+
+[[redirects]]
+  from = "/modern-apartment-premium.html"
+  to = "/Modern Apartment Upsell.html"
+  status = 200
+
+[[redirects]]
+  from = "/modern-apartments-premium"
+  to = "/Modern Apartment Upsell.html"
+  status = 200
+
+[[redirects]]
+  from = "/modern-apartments-premium.html"
+  to = "/Modern Apartment Upsell.html"
+  status = 200
+
+[[redirects]]
+  from = "/luxury-apartment-premium"
+  to = "/Luxury Apartment Upsell.html"
+  status = 200
+
+[[redirects]]
+  from = "/luxury-apartment-premium.html"
+  to = "/Luxury Apartment Upsell.html"
+  status = 200
+
+[[redirects]]
+  from = "/luxury-apartments-premium"
+  to = "/Luxury Apartment Upsell.html"
+  status = 200
+
+[[redirects]]
+  from = "/luxury-apartments-premium.html"
+  to = "/Luxury Apartment Upsell.html"
+  status = 200

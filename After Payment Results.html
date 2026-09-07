@@ -1,0 +1,2761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RentReady Network — Your rental profile scan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void: #ffffff;
+    --bg-panel: #fbfdfb;
+    --bg-panel-2: #f3f6f3;
+    --primary: #1A4731;
+    --primary-light: #34A46C;
+    --primary-rgba: rgba(26, 71, 49, 0);
+    --line: rgba(26,71,49,0.10);
+    --line-strong: rgba(26,71,49,0.17);
+    --text-primary: #163e2c;
+    --text-muted: #637268;
+    --text-dim: #94A39A;
+    --accent: #1A4731;
+    --accent-soft: #E9F7F0;
+    --accent-glow: rgba(26,71,49,0.18);
+    --risk-green: #6fcf6f;
+    --risk-amber: #f2c14e;
+    --risk-orange: #ef9d4c;
+    --risk-coral: #e0575b;
+    --chip-coral-text: #c23b3f;
+    --chip-coral-bg: rgba(224,87,91,0.10);
+    --chip-coral-line: rgba(224,87,91,0.35);
+    --chip-amber-text: #9c6d13;
+    --chip-amber-bg: rgba(242,193,78,0.16);
+    --chip-amber-line: rgba(242,193,78,0.5);
+    --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-in: cubic-bezier(0.6, 0, 0.9, 0.3);
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg-void);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  a, button{ font-family: inherit; }
+
+  :focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  /* ---------- page-load reveal ---------- */
+  @keyframes rise-in{
+    from{ opacity: 0; transform: translateY(14px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+  .nav,
+  .status-line,
+  .scene-wrap,
+  .readout,
+  .skip-btn{
+    animation: rise-in 0.9s var(--ease) backwards;
+  }
+  .nav{ animation-delay: 0s; }
+  .status-line{ animation-delay: 0.09s; }
+  .scene-wrap{ animation-delay: 0.16s; }
+  .readout{ animation-delay: 0.26s; }
+  .skip-btn{ animation-delay: 0.34s; }
+
+  @media (prefers-reduced-motion: reduce){
+    .nav, .status-line, .scene-wrap, .readout, .skip-btn{
+      animation: none;
+    }
+  }
+
+  /* ---------- background field ---------- */
+  .field{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 900px 480px at 50% 6%, var(--accent-soft), transparent 62%);
+  }
+  .field::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 64px 64px;
+    opacity: 0.55;
+    mask-image: radial-gradient(ellipse 70% 55% at 50% 18%, black, transparent 78%);
+  }
+
+  /* ---------- nav ---------- */
+  .nav{
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 28px clamp(20px, 5vw, 64px) 0;
+  }
+  .nav-mark{
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(155deg, #1f5d43, #0f3226);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-mark svg{ width: 16px; height: 16px; stroke: #ffffff; }
+  .nav-word{ font-weight: 600; font-size: 15px; letter-spacing: -0.01em; color: var(--text-primary); }
+
+  /* ---------- hero / scan stage ---------- */
+  .stage{
+    position: relative;
+    z-index: 1;
+    isolation: isolate;
+    min-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px 60px;
+    transition: opacity 0.5s var(--ease), filter 0.5s var(--ease), transform 0.5s var(--ease);
+  }
+  .stage::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:-1;
+    background:#f3f6f3;
+  }
+  .stage.is-done{
+    opacity: 0;
+    filter: blur(6px);
+    transform: scale(0.94);
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+  }
+
+  .status-line{
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    margin-bottom: 96px;
+    min-height: 16px;
+  }
+  .status-dot{
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 0 rgba(47,158,91,0.45);
+    animation: pulse-dot 1.6s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulse-dot{
+    0%,100%{ box-shadow: 0 0 0 0 rgba(47,158,91,0.35); }
+    50%{ box-shadow: 0 0 0 6px rgba(47,158,91,0); }
+  }
+
+  /* ---------- assembling-block loader (Uiverse.io by Admin12121, exact CSS source) ---------- */
+  .scene-wrap{
+    position: relative;
+    width: 440px;
+    height: 360px;
+    max-width: 88vw;
+    perspective: 1400px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* From Uiverse.io by Admin12121 */ 
+  .loader {
+    --duration: 3s;
+    --primary: #1A4731;
+    --primary-light: #34A46C;
+    --primary-rgba: rgba(26, 71, 49, 0);
+    width: 200px;
+    height: 320px;
+    position: relative;
+    transform-style: preserve-3d;
+  }
+  
+  @media (max-width: 480px) {
+    .loader {
+      zoom: 0.44;
+    }
+  }
+  
+  .loader:before, .loader:after {
+    --r: 20.5deg;
+    content: "";
+    width: 320px;
+    height: 140px;
+    position: absolute;
+    right: 32%;
+    bottom: -11px;
+    background: #f3f6f3;
+    transform: translateZ(200px) rotate(var(--r));
+    -webkit-animation: mask var(--duration) linear forwards infinite;
+    animation: mask var(--duration) linear forwards infinite;
+  }
+  
+  .loader:after {
+    --r: -20.5deg;
+    right: auto;
+    left: 32%;
+  }
+  
+  .loader .ground {
+    position: absolute;
+    left: -50px;
+    bottom: -120px;
+    transform-style: preserve-3d;
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+  
+  .loader .ground div {
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
+    width: 200px;
+    height: 200px;
+    background: var(--primary);
+    background: linear-gradient(45deg, var(--primary) 0%, var(--primary) 50%, var(--primary-light) 50%, var(--primary-light) 100%);
+    transform-style: preserve-3d;
+    -webkit-animation: ground var(--duration) linear forwards infinite;
+    animation: ground var(--duration) linear forwards infinite;
+  }
+  
+  .loader .ground div:before, .loader .ground div:after {
+    --rx: 90deg;
+    --ry: 0deg;
+    --x: 44px;
+    --y: 162px;
+    --z: -50px;
+    content: "";
+    width: 156px;
+    height: 300px;
+    opacity: 0;
+    background: linear-gradient(var(--primary), var(--primary-rgba));
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: rotateX(var(--rx)) rotateY(var(--ry)) translate(var(--x), var(--y)) translateZ(var(--z));
+    -webkit-animation: ground-shine var(--duration) linear forwards infinite;
+    animation: ground-shine var(--duration) linear forwards infinite;
+  }
+  
+  .loader .ground div:after {
+    --rx: 90deg;
+    --ry: 90deg;
+    --x: 0;
+    --y: 177px;
+    --z: 150px;
+  }
+  
+  .loader .box {
+    --x: 0;
+    --y: 0;
+    position: absolute;
+    -webkit-animation: var(--duration) linear forwards infinite;
+    animation: var(--duration) linear forwards infinite;
+    transform: translate(var(--x), var(--y));
+  }
+  
+  .loader .box div {
+    background-color: var(--primary);
+    width: 48px;
+    height: 48px;
+    position: relative;
+    transform-style: preserve-3d;
+    -webkit-animation: var(--duration) ease forwards infinite;
+    animation: var(--duration) ease forwards infinite;
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+  
+  .loader .box div:before, .loader .box div:after {
+    --rx: 90deg;
+    --ry: 0deg;
+    --z: 24px;
+    --y: -24px;
+    --x: 0;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: inherit;
+    width: inherit;
+    height: inherit;
+    transform: rotateX(var(--rx)) rotateY(var(--ry)) translate(var(--x), var(--y)) translateZ(var(--z));
+    filter: brightness(var(--b, 1.2));
+  }
+  
+  .loader .box div:after {
+    --rx: 0deg;
+    --ry: 90deg;
+    --x: 24px;
+    --y: 0;
+    --b: 1.4;
+  }
+
+  .loader .box.box0 {
+    --x: -220px;
+    --y: -120px;
+    left: 58px;
+    top: 108px;
+  }
+  
+  .loader .box.box1 {
+    --x: -260px;
+    --y: 120px;
+    left: 25px;
+    top: 120px;
+  }
+  
+  .loader .box.box2 {
+    --x: 120px;
+    --y: -190px;
+    left: 58px;
+    top: 64px;
+  }
+  
+  .loader .box.box3 {
+    --x: 280px;
+    --y: -40px;
+    left: 91px;
+    top: 120px;
+  }
+  
+  .loader .box.box4 {
+    --x: 60px;
+    --y: 200px;
+    left: 58px;
+    top: 132px;
+  }
+  
+  .loader .box.box5 {
+    --x: -220px;
+    --y: -120px;
+    left: 25px;
+    top: 76px;
+  }
+  
+  .loader .box.box6 {
+    --x: -260px;
+    --y: 120px;
+    left: 91px;
+    top: 76px;
+  }
+  
+  .loader .box.box7 {
+    --x: -240px;
+    --y: 200px;
+    left: 58px;
+    top: 87px;
+  }
+  
+  .loader .box0 {
+    -webkit-animation-name: box-move0;
+    animation-name: box-move0;
+  }
+  
+  .loader .box0 div {
+    -webkit-animation-name: box-scale0;
+    animation-name: box-scale0;
+  }
+  
+  .loader .box1 {
+    -webkit-animation-name: box-move1;
+    animation-name: box-move1;
+  }
+  
+  .loader .box1 div {
+    -webkit-animation-name: box-scale1;
+    animation-name: box-scale1;
+  }
+  
+  .loader .box2 {
+    -webkit-animation-name: box-move2;
+    animation-name: box-move2;
+  }
+  
+  .loader .box2 div {
+    -webkit-animation-name: box-scale2;
+    animation-name: box-scale2;
+  }
+  
+  .loader .box3 {
+    -webkit-animation-name: box-move3;
+    animation-name: box-move3;
+  }
+  
+  .loader .box3 div {
+    -webkit-animation-name: box-scale3;
+    animation-name: box-scale3;
+  }
+  
+  .loader .box4 {
+    -webkit-animation-name: box-move4;
+    animation-name: box-move4;
+  }
+  
+  .loader .box4 div {
+    -webkit-animation-name: box-scale4;
+    animation-name: box-scale4;
+  }
+  
+  .loader .box5 {
+    -webkit-animation-name: box-move5;
+    animation-name: box-move5;
+  }
+  
+  .loader .box5 div {
+    -webkit-animation-name: box-scale5;
+    animation-name: box-scale5;
+  }
+  
+  .loader .box6 {
+    -webkit-animation-name: box-move6;
+    animation-name: box-move6;
+  }
+  
+  .loader .box6 div {
+    -webkit-animation-name: box-scale6;
+    animation-name: box-scale6;
+  }
+  
+  .loader .box7 {
+    -webkit-animation-name: box-move7;
+    animation-name: box-move7;
+  }
+  
+  .loader .box7 div {
+    -webkit-animation-name: box-scale7;
+    animation-name: box-scale7;
+  }
+  
+  @-webkit-keyframes box-move0 {
+    12% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    25%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @keyframes box-move0 {
+    12% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    25%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @-webkit-keyframes box-scale0 {
+    6% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    14%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @keyframes box-scale0 {
+    6% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    14%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @-webkit-keyframes box-move1 {
+    16% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    29%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @keyframes box-move1 {
+    16% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    29%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @-webkit-keyframes box-scale1 {
+    10% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    18%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @keyframes box-scale1 {
+    10% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    18%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @-webkit-keyframes box-move2 {
+    20% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    33%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @keyframes box-move2 {
+    20% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    33%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @-webkit-keyframes box-scale2 {
+    14% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    22%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @keyframes box-scale2 {
+    14% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    22%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @-webkit-keyframes box-move3 {
+    24% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    37%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @keyframes box-move3 {
+    24% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    37%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @-webkit-keyframes box-scale3 {
+    18% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    26%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @keyframes box-scale3 {
+    18% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    26%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @-webkit-keyframes box-move4 {
+    28% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    41%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @keyframes box-move4 {
+    28% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    41%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @-webkit-keyframes box-scale4 {
+    22% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    30%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @keyframes box-scale4 {
+    22% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    30%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @-webkit-keyframes box-move5 {
+    32% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    45%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @keyframes box-move5 {
+    32% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    45%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @-webkit-keyframes box-scale5 {
+    26% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    34%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @keyframes box-scale5 {
+    26% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    34%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @-webkit-keyframes box-move6 {
+    36% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    49%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @keyframes box-move6 {
+    36% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    49%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @-webkit-keyframes box-scale6 {
+    30% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    38%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @keyframes box-scale6 {
+    30% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    38%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @-webkit-keyframes box-move7 {
+    40% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    53%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @keyframes box-move7 {
+    40% {
+      transform: translate(var(--x), var(--y));
+    }
+  
+    53%, 52% {
+      transform: translate(0, 0);
+    }
+  
+    80% {
+      transform: translate(0, -32px);
+    }
+  
+    90%, 100% {
+      transform: translate(0, 188px);
+    }
+  }
+  
+  @-webkit-keyframes box-scale7 {
+    34% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    42%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+  
+  @keyframes box-scale7 {
+    34% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+    }
+  
+    42%, 100% {
+      transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+    }
+  }
+
+  @-webkit-keyframes ground {
+    0%, 65% {
+      transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
+    }
+  
+    75%, 90% {
+      transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(1);
+    }
+  
+    100% {
+      transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
+    }
+  }
+  
+  @keyframes ground {
+    0%, 65% {
+      transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
+    }
+  
+    75%, 90% {
+      transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(1);
+    }
+  
+    100% {
+      transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
+    }
+  }
+  
+  @-webkit-keyframes ground-shine {
+    0%, 70% {
+      opacity: 0;
+    }
+  
+    75%, 87% {
+      opacity: 0.2;
+    }
+  
+    100% {
+      opacity: 0;
+    }
+  }
+  
+  @keyframes ground-shine {
+    0%, 70% {
+      opacity: 0;
+    }
+  
+    75%, 87% {
+      opacity: 0.2;
+    }
+  
+    100% {
+      opacity: 0;
+    }
+  }
+  
+  @-webkit-keyframes mask {
+    0%, 65% {
+      opacity: 0;
+    }
+  
+    66%, 100% {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes mask {
+    0%, 65% {
+      opacity: 0;
+    }
+  
+    66%, 100% {
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 480px){
+    .scene-wrap{ width: 320px; height: 300px; }
+  }
+
+  .loader,
+  .loader *,
+  .loader:before,
+  .loader:after{
+    -webkit-animation-iteration-count: 1 !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .loader.is-complete,
+  .loader.is-complete *{
+    -webkit-animation-delay: -2.4s !important;
+    animation-delay: -2.4s !important;
+    -webkit-animation-play-state: paused !important;
+    animation-play-state: paused !important;
+  }
+
+  .loader.is-hidden{ display: none; }
+
+  .readout{
+    position: relative;
+    z-index: 3;
+    margin-top: 48px;
+  }
+  .readout-percent{
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: clamp(42px, 7vw, 58px);
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .readout-percent span{ color: var(--accent); }
+  .readout-phrase{
+    margin-top: 9px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-muted);
+    min-height: 18px;
+    letter-spacing: 0.01em;
+    transition: opacity 0.22s var(--ease);
+  }
+  .readout-bar{
+    width: 220px;
+    height: 2px;
+    background: var(--line);
+    margin: 22px auto 0;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .readout-bar-fill{
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--primary-light));
+    transition: width 0.12s linear;
+  }
+
+  .skip-btn{
+    margin-top: 40px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s var(--ease), border-color 0.2s var(--ease), opacity 0.2s var(--ease);
+  }
+  .skip-btn:hover{ color: var(--text-muted); border-color: var(--line-strong); }
+  .skip-btn:active{ opacity: 0.6; }
+
+  /* ---------- content / report ---------- */
+  .report{
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    margin: 0 auto;
+    padding: 28px clamp(18px, 4vw, 56px) 72px;
+    clip-path: inset(0 0 100% 0);
+    opacity: 0;
+    transition: clip-path 1.05s var(--ease), opacity 0.7s var(--ease);
+  }
+  .report.is-revealed{
+    clip-path: inset(0 0 0% 0);
+    opacity: 1;
+  }
+
+  .report-shell{
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 24px 80px rgba(15, 20, 15, 0.08);
+  }
+
+  .report-status{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.78);
+    letter-spacing: 0.02em;
+    margin-bottom: 28px;
+  }
+  .report-status svg{
+    width: 13px; height: 13px; stroke: var(--accent);
+    transform: scale(0.4);
+    opacity: 0;
+    transition: transform 0.5s var(--ease-spring) 0.15s, opacity 0.3s var(--ease) 0.15s;
+  }
+  .report.is-revealed .report-status svg{
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .result-hero{
+    position: relative;
+    min-height: 560px;
+    padding: 58px clamp(28px, 7vw, 96px) 72px;
+    text-align: center;
+    color: #fff;
+    background:
+      linear-gradient(rgba(13, 24, 18, 0.72), rgba(13, 24, 18, 0.82)),
+      radial-gradient(circle at 28% 18%, rgba(91, 201, 131, 0.26), transparent 28%),
+      linear-gradient(145deg, #13281f, #0b1511 72%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    isolation: isolate;
+  }
+  .result-hero > *,
+  .result-section > *{
+    min-width: 0;
+    max-width: 100%;
+  }
+  .result-hero::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:-1;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 58px 58px;
+    mask-image: radial-gradient(ellipse 80% 68% at 50% 45%, black, transparent 78%);
+  }
+  .result-logo{
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 26px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  .result-logo-mark{
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.18);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .result-kicker{
+    margin: 0 0 18px;
+    color: #A7E4BE;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+  .result-hero h1{
+    margin: 0;
+    max-width: 780px;
+    font-size: clamp(42px, 6.2vw, 78px);
+    line-height: 0.98;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+    width: 100%;
+  }
+  .result-hero-copy{
+    margin: 24px auto 0;
+    max-width: 620px;
+    color: rgba(255,255,255,0.78);
+    font-size: 18px;
+    line-height: 1.7;
+  }
+
+  .cta-block{
+    text-align: center;
+    margin: 34px 0 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .cta-btn{
+    appearance: none;
+    border: none;
+    background: linear-gradient(180deg, var(--primary-light), var(--primary));
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16.5px;
+    letter-spacing: -0.01em;
+    padding: 16px 34px;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow:
+      0 1px 1px rgba(14, 36, 22, 0.08),
+      0 8px 20px -6px rgba(47, 158, 91, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transition: box-shadow 0.3s var(--ease), transform 0.2s var(--ease), background 0.3s var(--ease);
+  }
+  .cta-btn:hover{
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 1px rgba(14, 36, 22, 0.08),
+      0 12px 26px -6px rgba(47, 158, 91, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    background: linear-gradient(180deg, #3DB66E, var(--primary));
+  }
+  .cta-btn:active{
+    transform: translateY(0) scale(0.98);
+    transition: transform 0.1s var(--ease);
+  }
+  .cta-sub{
+    margin-top: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: rgba(255,255,255,0.58);
+    letter-spacing: 0.02em;
+  }
+
+  .result-section{
+    padding: clamp(52px, 7vw, 84px) clamp(28px, 7vw, 92px);
+  }
+  .result-section--light{
+    background: #fff;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+    gap: clamp(40px, 7vw, 86px);
+    align-items: center;
+  }
+  .section-eyebrow{
+    margin: 0 0 12px;
+    color: var(--primary-light);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .section-title{
+    margin: 0;
+    color: #163e2c;
+    font-size: clamp(34px, 4.4vw, 56px);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    overflow-wrap: anywhere;
+  }
+  .section-copy{
+    margin: 18px 0 0;
+    color: var(--text-muted);
+    font-size: 17px;
+    line-height: 1.65;
+    max-width: 570px;
+    overflow-wrap: anywhere;
+  }
+  .value-list{
+    display: grid;
+    gap: 12px;
+    margin: 26px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .value-list li{
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 12px;
+    align-items: start;
+    color: #244d3a;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .value-list li::before{
+    content:"✓";
+    color: var(--primary-light);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .signature-note{
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.6;
+    max-width: 520px;
+  }
+  .profile-card{
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fafcfb;
+    padding: 28px;
+    box-shadow: 0 18px 45px rgba(15,20,15,0.06);
+  }
+  .profile-card-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 22px;
+  }
+  .profile-card h3{
+    margin: 0;
+    color: #163e2c;
+    font-size: 22px;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+  .profile-pill{
+    white-space: nowrap;
+    border: 1px solid rgba(58,166,103,0.26);
+    border-radius: 999px;
+    background: rgba(58,166,103,0.10);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 10px;
+  }
+
+  .gauge-col{ display: flex; flex-direction: column; align-items: center; }
+  .gauge svg{ width: 100%; max-width: 280px; height: auto; overflow: visible; }
+  .gauge svg path{
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 0.85s var(--ease) 0.05s;
+  }
+  .report.is-revealed .gauge svg path{ stroke-dashoffset: 0; }
+  .gauge-label{
+    margin-top: 6px;
+    font-size: 15px;
+    letter-spacing: -0.005em;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.5s var(--ease) 0.75s;
+  }
+  .report.is-revealed .gauge-label{ opacity: 1; }
+  .gauge-label b{
+    color: var(--chip-coral-text);
+    font-weight: 700;
+  }
+  .gauge-scale{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 240px;
+    margin-top: 2px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-dim);
+    letter-spacing: 0.03em;
+  }
+
+  .factors-heading{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.03em;
+    margin: 0 0 14px;
+  }
+  .factor-list{ border-top: 1px solid var(--line); }
+  .factor{
+    border-bottom: 1px solid var(--line);
+  }
+  .factor-row{
+    width: 100%;
+    background: none;
+    border: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 17px 10px;
+    margin: 0 -10px;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.2s var(--ease);
+  }
+  .factor-row:hover{
+    background-color: rgba(15, 20, 15, 0.03);
+  }
+  .factor-name{
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    color: var(--text-primary);
+  }
+  .factor-right{ display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .factor-chip{
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    font-weight: 500;
+  }
+  .chip--elevated{ color: var(--chip-coral-text); background: var(--chip-coral-bg); border-color: var(--chip-coral-line); }
+  .chip--pending{ color: var(--chip-amber-text); background: var(--chip-amber-bg); border-color: var(--chip-amber-line); }
+
+  .factor-chevron{
+    width: 9px; height: 9px;
+    border-right: 1.5px solid var(--text-dim);
+    border-bottom: 1.5px solid var(--text-dim);
+    transform: rotate(-45deg);
+    transition: transform 0.35s var(--ease);
+    flex-shrink: 0;
+  }
+  .factor.is-open .factor-chevron{ transform: rotate(45deg); }
+
+  .factor-detail{
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 0.38s var(--ease), opacity 0.28s var(--ease);
+  }
+  .factor.is-open .factor-detail{
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  .factor-detail > p{
+    overflow: hidden;
+    min-height: 0;
+    margin: 0 12px 17px;
+    font-size: 14px;
+    line-height: 1.55;
+    letter-spacing: -0.004em;
+    color: var(--text-muted);
+    max-width: 440px;
+  }
+
+  .proof-section{
+    background: #102f22;
+    color: #fff;
+    text-align: center;
+  }
+  .proof-section .section-eyebrow{ color: #A7E4BE; }
+  .proof-section .section-title{ color: #fff; }
+  .proof-section .section-copy{
+    margin-left: auto;
+    margin-right: auto;
+    color: rgba(255,255,255,0.72);
+  }
+  .video-panel{
+    width: min(100%, 680px);
+    aspect-ratio: 16 / 9;
+    margin: 34px auto 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background:
+      linear-gradient(rgba(17,31,24,0.28), rgba(17,31,24,0.42)),
+      radial-gradient(circle at 50% 45%, rgba(127,217,158,0.22), transparent 28%),
+      linear-gradient(135deg, #102f22, #1A4731);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: 0 22px 55px rgba(0,0,0,0.18);
+  }
+  .play-button{
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.82);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: rgba(255,255,255,0.10);
+  }
+  .play-button::before{
+    content:"";
+    margin-left: 5px;
+    border-left: 19px solid #fff;
+    border-top: 12px solid transparent;
+    border-bottom: 12px solid transparent;
+  }
+  .proof-grid{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 26px;
+  }
+  .proof-card{
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    text-align: left;
+  }
+  .proof-thumb{
+    min-height: 130px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    background:
+      linear-gradient(rgba(47,158,91,0.72), rgba(47,158,91,0.78)),
+      linear-gradient(135deg, #dfe8e1, #7d9185);
+  }
+  .proof-card p{
+    margin: 0;
+    padding: 16px 18px 20px;
+    color: rgba(255,255,255,0.76);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .proof-cta .cta-sub{
+    color: rgba(255,255,255,0.48);
+  }
+
+  .footer-note{
+    max-width: 760px;
+    margin: 34px auto 0;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.65;
+    color: rgba(255,255,255,0.46);
+  }
+
+  /* ---------- pasted result page structure ---------- */
+	  .report{
+	    display: block;
+	    padding: 0 0 72px;
+	    clip-path: inset(0 0 100% 0);
+	    opacity: 0;
+	    transition: clip-path 1.05s var(--ease), opacity 0.7s var(--ease);
+	  }
+  body.report-mode .nav{
+    display: none;
+  }
+	  .report,
+	  .report *{
+	    box-sizing: border-box;
+	  }
+  .report.is-revealed{
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+  .report-shell{
+    max-width: none;
+    width: 100%;
+    margin: 0 auto;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+  }
+  .brief-hero{
+    min-height: 690px;
+    background:
+      linear-gradient(rgba(0,0,0,.62), rgba(0,0,0,.82)),
+      url("./hero-bg-optimized.jpg") center / cover no-repeat;
+    border: 0;
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: none;
+    padding: clamp(56px,7vw,92px) clamp(24px,7vw,94px);
+    color: #fff;
+    position: relative;
+  }
+  .brief-hero:before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 54px 54px;
+    opacity: .28;
+    pointer-events: none;
+  }
+  .brief-hero-grid{
+    min-height: 520px;
+    position: relative;
+    z-index: 1;
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    justify-content: center;
+    text-align: center;
+    gap: 30px;
+  }
+  .brief-hero-grid > *{
+    width: 100%;
+    max-width: 920px;
+    min-width: 0;
+  }
+  .brief-eyebrow{
+    font-size:13px;
+    font-weight:650;
+    letter-spacing:.015em;
+    color:var(--primary);
+    margin:0 0 16px;
+  }
+	  .brief-hero h1{
+	    font-size:clamp(52px,5.6vw,82px);
+	    line-height:1.02;
+	    letter-spacing:0;
+	    margin:0;
+	    max-width:1120px;
+	    color: #fff;
+	    overflow-wrap:anywhere;
+      margin-left: auto;
+      margin-right: auto;
+      white-space: nowrap;
+	  }
+  .brief-copy{
+    font-size:clamp(17px,2vw,20px);
+    line-height:1.5;
+    color:rgba(255,255,255,.82);
+    margin:24px 0 0;
+    max-width:720px;
+    margin-left: auto;
+    margin-right: auto;
+    letter-spacing:0;
+  }
+	  .continuity{
+	    display:inline-flex;
+	    align-items:center;
+	    gap:8px;
+    margin-top:28px;
+    padding:0;
+    border-radius:999px;
+    background:transparent;
+    color:#fff;
+	    font-size:13px;
+	    font-weight:620;
+	    max-width: 100%;
+      justify-content: center;
+      overflow-wrap: anywhere;
+	    white-space: normal;
+	  }
+  .continuity-dot{
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    background:transparent;
+    border: 2px solid var(--primary);
+    position: relative;
+  }
+  .continuity-dot:after{
+    content:"";
+    position:absolute;
+    left: 14px;
+    top: 9px;
+    border-left: 11px solid var(--primary);
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+  }
+  .outlook{
+    width: min(100%, 620px);
+    border:1px solid rgba(255,255,255,.18);
+    border-radius:8px;
+    background:rgba(0,0,0,.36);
+    padding:24px 26px;
+    backdrop-filter: blur(18px);
+    overflow: hidden;
+  }
+  .outlook-label{
+    font-size:12px;
+    font-weight:650;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:rgba(255,255,255,.58);
+  }
+  .outlook-state{
+    font-size:30px;
+    font-weight:700;
+    letter-spacing:0;
+    margin:10px 0 8px;
+    color:#fff;
+  }
+  .outlook-copy{
+    font-size:14px;
+    line-height:1.55;
+    color:rgba(255,255,255,.7);
+    margin:0 0 22px;
+  }
+  .signal-mini{display:grid;gap:10px;border-top:1px solid rgba(255,255,255,.14);padding-top:18px}
+  .signal-row{display:flex;align-items:center;justify-content:space-between;gap:18px;font-size:14px}
+  .signal-row strong{font-weight:600;color:#163e2c}
+  .brief-hero .signal-row strong{color:#fff}
+  .status{font-size:12px;font-weight:650;padding:6px 9px;border-radius:999px;white-space:nowrap}
+  .good{background:var(--accent-soft);color:#11663a}
+  .warn{background:var(--chip-amber-bg);color:var(--chip-amber-text)}
+  .risk{background:var(--chip-coral-bg);color:var(--chip-coral-text)}
+  .brief-section{
+    background: #fff;
+    padding:clamp(46px,6vw,76px) clamp(24px,6vw,82px) clamp(82px,10vw,132px);
+  }
+  .brief-section-head{
+    max-width:860px;
+    margin:0 auto clamp(34px,5vw,58px);
+    text-align:center;
+  }
+  .scroll-cue{
+    width:84px;
+    height:84px;
+    margin:0 auto 20px;
+    display:grid;
+    place-items:center;
+    color:rgba(180,180,180,.25);
+    animation: scroll-cue-bounce 2.2s ease-in-out infinite;
+    opacity:1;
+    transition:opacity .55s var(--ease);
+    will-change:transform, opacity;
+  }
+  .scroll-cue.is-hidden{
+    opacity:0;
+  }
+  .scroll-cue svg{
+    width:64px;
+    height:64px;
+    stroke:currentColor;
+  }
+  @keyframes scroll-cue-bounce{
+    0%, 100%{
+      transform:translateY(0) scale(1);
+    }
+    50%{
+      transform:translateY(10px) scale(1.08);
+    }
+  }
+	  .brief-section h2{
+	    font-size:clamp(42px,5vw,66px);
+	    line-height:1.02;
+	    letter-spacing:0;
+	    margin:0;
+	    color:#163e2c;
+	    overflow-wrap:anywhere;
+	  }
+  .brief-section-copy{
+    font-size:18px;
+    line-height:1.6;
+    color:var(--text-muted);
+    margin:18px auto 0;
+    max-width:720px;
+  }
+  .apartment-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:clamp(18px,3vw,30px);
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .apartment-card{
+    background:#fff;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 18px 56px rgba(0,0,0,.055);
+    color:inherit;
+    text-decoration:none;
+  }
+  .apartment-image{
+    display:block;
+    width:100%;
+    aspect-ratio:16 / 10;
+    object-fit:cover;
+    background:#f3f5f4;
+  }
+  .apartment-card h3{
+    margin:0;
+    padding:22px 24px 24px;
+    color:#163e2c;
+    font-size:clamp(22px,2.3vw,30px);
+    line-height:1.1;
+    letter-spacing:0;
+    text-align:center;
+  }
+  .bridge{
+    background:#050706;
+    color:#fff;
+    border-radius:0;
+    padding:clamp(82px,9vw,122px) clamp(34px,7vw,92px);
+    overflow:hidden;
+    position:relative;
+  }
+  .bridge:before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      linear-gradient(rgba(0,0,0,.58), rgba(0,0,0,.84)),
+      url("./hero-card-optimized.jpg") center / cover no-repeat;
+    opacity: .24;
+  }
+  .bridge:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg, rgba(0,0,0,.94), rgba(0,0,0,.76))}
+  .bridge-inner{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:clamp(44px,7vw,88px);align-items:center}
+  .bridge .brief-eyebrow{color:#7dd7a0}
+	  .bridge h2{font-size:clamp(40px,5vw,64px);line-height:1;letter-spacing:0;margin:0;max-width:650px}
+	  .bridge h2,
+	  .offer h2{
+	    overflow-wrap:anywhere;
+	  }
+  .bridge-copy{color:rgba(255,255,255,.69);font-size:18px;line-height:1.6;margin:20px 0 0;max-width:620px}
+  .value-stack{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 24px;backdrop-filter: blur(14px)}
+  .value-item{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:18px 0;border-bottom:1px solid rgba(255,255,255,.09)}
+  .value-item:last-child{border-bottom:0}
+  .value-check{width:24px;height:24px;border-radius:50%;background:rgba(125,215,160,.14);color:#7dd7a0;display:grid;place-items:center;font-size:13px;font-weight:700}
+  .value-item strong{display:block;font-size:15px;margin-bottom:4px}
+  .value-item span{display:block;color:rgba(255,255,255,.58);font-size:13px;line-height:1.45}
+  .offer{padding:clamp(82px,10vw,126px) clamp(24px,6vw,82px) 34px;background:#fff}
+  .offer-card{max-width:900px;margin:0 auto;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:clamp(46px,7vw,80px);text-align:center;box-shadow:0 18px 58px rgba(0,0,0,.055)}
+  .offer h2{font-size:clamp(42px,5.5vw,66px);line-height:1;letter-spacing:0;margin:0 auto;max-width:760px;color:#163e2c}
+  .offer p{font-size:18px;line-height:1.6;color:var(--text-muted);max-width:700px;margin:20px auto 0}
+  .offer-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+  .primary-btn,.secondary-btn{min-height:54px;padding:0 26px;border-radius:8px;border:1px solid transparent;font-weight:700;font-size:15px;display:inline-flex;align-items:center;justify-content:center;transition:transform .2s var(--ease),box-shadow .2s var(--ease),background .2s var(--ease);text-decoration:none}
+  .primary-btn{background:#1e8f50;color:#fff;box-shadow:0 9px 24px rgba(30,143,80,.2)}
+  .primary-btn:hover{transform:translateY(-1px);box-shadow:0 13px 28px rgba(30,143,80,.25)}
+  .secondary-btn{background:#fff;color:var(--text-primary);border-color:var(--line)}
+  .hero-actions{
+    display:flex;
+    gap: 14px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-top: 30px;
+  }
+  .hero-actions .primary-btn{
+    background: var(--primary);
+    box-shadow: 0 12px 28px rgba(47,158,91,.28);
+  }
+  .hero-actions .secondary-btn{
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    border-color: rgba(255,255,255,.22);
+  }
+  .offer-note{font-size:12px!important;color:var(--text-dim)!important;margin-top:16px!important}
+  .disclosure{max-width:800px;margin:34px auto 0;text-align:center;color:var(--text-dim);font-size:12px;line-height:1.55}
+
+	  @media (max-width: 860px){
+    html,
+    body{
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    .report{
+      padding: 0 0 48px;
+      width: 100vw;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+    .report-shell{
+      width: 100%;
+      max-width: 100%;
+      margin-left: 0;
+      margin-right: 0;
+      border-radius: 0;
+    }
+    .result-hero{
+      min-height: auto;
+      padding: 48px 22px 54px;
+    }
+    .result-logo{ margin-bottom: 22px; }
+    .result-hero h1{
+      font-size: clamp(34px, 10vw, 46px);
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .result-hero-copy{
+      font-size: 16px;
+      line-height: 1.62;
+      max-width: 280px;
+    }
+    .result-section{ padding: 44px 22px; }
+    .result-section--light{ grid-template-columns: 1fr; gap: 34px; }
+    .section-title{
+      font-size: clamp(30px, 8vw, 42px);
+      max-width: 300px;
+    }
+    .section-copy{ max-width: 100%; }
+    .section-copy,
+    .value-list,
+    .signature-note{
+      max-width: 280px;
+    }
+    .value-list li{ font-size: 15px; }
+    .profile-card{ padding: 22px; }
+    .profile-card-head{ flex-direction: column; align-items: center; text-align: center; }
+    .proof-grid{ grid-template-columns: 1fr; }
+    .gauge-col{ margin-bottom: 4px; }
+    .factor-row{ align-items: flex-start; }
+    .factor-right{ gap: 8px; }
+    .factor-chip{ white-space: normal; text-align: center; }
+    .cta-btn{ width: min(100%, 280px); max-width: 280px; padding-left: 18px; padding-right: 18px; }
+    .brief-hero-grid,
+    .bridge-inner,
+    .apartment-grid{ grid-template-columns: 1fr; }
+	    .brief-hero,
+	    .bridge{ border-radius: 0; }
+      .offer-card{ border-radius: 8px; }
+	    .brief-hero{ padding: 42px 24px; }
+      .brief-hero-grid{
+        min-height: auto;
+      }
+      .brief-hero-grid > *{
+        max-width: 100%;
+      }
+	    .brief-hero > *,
+	    .brief-section > *,
+	    .bridge-inner > *,
+	    .offer-card > *{
+	      min-width: 0;
+	    }
+	    .outlook{ padding: 22px; }
+	    .brief-section{ padding: 46px 24px 70px; }
+	  }
+	  @media (max-width: 520px){
+	    .nav{ padding: 18px 16px 0; }
+	    .report{ padding: 0 0 52px; }
+	    .report-shell{ width: 100%; max-width: 100%; }
+	    .brief-hero h1{ font-size: clamp(36px, 10.5vw, 43px); }
+	    .brief-copy,
+	    .brief-section-copy,
+	    .bridge-copy,
+	    .offer p{ font-size: 16px; }
+	    .brief-hero,
+	    .bridge{ padding: 34px 20px; }
+      .offer-card{ padding: 34px 20px; }
+      .brief-section{ padding: 40px 20px 58px; }
+	    .brief-section h2,
+	    .bridge h2,
+	    .offer h2{ font-size: clamp(34px, 10vw, 44px); }
+	    .offer-actions{ display: grid; }
+	    .primary-btn,
+	    .secondary-btn{ width: 100%; }
+	    .signal-row{ align-items: flex-start; gap: 12px; }
+      .brief-hero h1,
+      .brief-section h2,
+      .bridge h2,
+      .offer h2{
+        width: 100%;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .brief-hero-grid > *,
+      .brief-section-head,
+      .apartment-grid,
+      .apartment-card,
+      .bridge-inner > *,
+      .outlook,
+      .offer-card > *{
+        width: min(100%, 300px);
+        max-width: 300px;
+      }
+      .apartment-card,
+      .offer-card{
+        max-width: 300px;
+      }
+      .brief-hero h1{
+        font-size: 30px;
+        line-height: 1.05;
+        white-space: normal;
+      }
+      .brief-copy,
+      .brief-section-copy,
+      .bridge-copy,
+      .offer p{
+        max-width: 300px;
+      }
+      .primary-btn,
+      .secondary-btn{
+        max-width: 260px;
+        margin-left: auto;
+        margin-right: auto;
+        white-space: normal;
+        text-align: center;
+      }
+      .outlook-state{
+        font-size: 26px;
+      }
+      .signal-row{
+        display: grid;
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+      }
+      .continuity{
+        display: grid;
+        justify-items: center;
+        gap: 10px;
+      }
+      .hero-actions{
+        display: grid;
+      }
+	    .status{ white-space: normal; text-align: center; }
+	  }
+
+  @media (prefers-reduced-motion: reduce){
+    .loader, .loader *{ animation: none !important; }
+    .scroll-cue{ animation: none !important; }
+    .loader .box div{ transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1); }
+    .loader .ground div{ transform: rotateX(90deg) rotateY(0deg) translate(-48px,-120px) translateZ(100px) scale(1); }
+    .status-dot{ animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="field" aria-hidden="true"></div>
+
+<nav class="nav">
+  <div class="nav-mark">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11.5 12 4l9 7.5"></path>
+      <path d="M5.5 10v9a1 1 0 0 0 1 1H9v-6h6v6h2.5a1 1 0 0 0 1-1v-9"></path>
+    </svg>
+  </div>
+  <span class="nav-word">RentReady Network</span>
+</nav>
+
+<!-- SCAN STAGE -->
+<section class="stage" id="stage">
+  <div class="status-line">
+    <span class="status-dot" aria-hidden="true"></span>
+    <span id="statusText">Initializing profile scan</span>
+  </div>
+
+  <div class="scene-wrap">
+    <div class="loader" id="loader" aria-hidden="true">
+      <div class="box box0"><div></div></div>
+      <div class="box box1"><div></div></div>
+      <div class="box box2"><div></div></div>
+      <div class="box box3"><div></div></div>
+      <div class="box box4"><div></div></div>
+      <div class="box box5"><div></div></div>
+      <div class="box box6"><div></div></div>
+      <div class="box box7"><div></div></div>
+      <div class="ground"><div></div></div>
+    </div>
+
+  </div>
+
+  <div class="readout">
+    <div class="readout-percent" id="percentText">0<span>%</span></div>
+    <div class="readout-phrase" id="phraseText">Pulling credit signals</div>
+    <div class="readout-bar"><div class="readout-bar-fill" id="barFill"></div></div>
+  </div>
+
+  <button class="skip-btn" id="skipBtn" type="button">Skip scan</button>
+</section>
+
+<!-- REPORT -->
+<section class="report" id="report" aria-live="polite">
+  <div class="report-shell">
+    <section class="brief-hero">
+      <div class="brief-hero-grid">
+        <div>
+          <div class="result-logo" aria-label="RentReady Network">
+            <span class="result-logo-mark">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 11.5 12 4l9 7.5"></path>
+                <path d="M5.5 10v9a1 1 0 0 0 1 1H9v-6h6v6h2.5a1 1 0 0 0 1-1v-9"></path>
+              </svg>
+            </span>
+            <span>RentReady Network</span>
+          </div>
+          <p class="brief-eyebrow">Your brief result</p>
+          <h1>Welcome to RentReady</h1>
+          <p class="brief-copy">You’re One Step Closer<br>to Your Next Home.</p>
+          <div class="continuity"><span class="continuity-dot" aria-hidden="true"></span><span>See Your Elligibility Below</span></div>
+        </div>
+
+        <aside class="outlook" aria-label="Your deposit outlook">
+          <div class="outlook-label">Your deposit outlook</div>
+          <div class="outlook-state" id="outlookState">Worth Exploring</div>
+          <p class="outlook-copy" id="outlookCopy">No-deposit options can depend on the property’s screening rules. Your current answers give you a useful starting point.</p>
+          <div class="signal-mini">
+            <div class="signal-row"><strong>Income fit</strong><span class="status warn" id="incomeStatus">Checking</span></div>
+            <div class="signal-row"><strong>Credit range</strong><span class="status warn" id="creditStatus">Checking</span></div>
+            <div class="signal-row"><strong>Move plan</strong><span class="status good" id="moveStatus">Ready</span></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="brief-section" id="briefResult">
+      <div class="brief-section-head">
+        <div class="scroll-cue" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14"></path>
+            <path d="m19 12-7 7-7-7"></path>
+          </svg>
+        </div>
+        <p class="brief-eyebrow">Find your fit</p>
+        <h2>Explore Apartment Options That Match Your Next Move.</h2>
+        <p class="brief-section-copy">Compare the type of home you want with the rental profile you are preparing.</p>
+      </div>
+      <div class="apartment-grid">
+        <a class="apartment-card" href="/luxury-apartments-premium.html">
+          <img class="apartment-image" src="real estate images/charlotte/charlotte 1.webp" alt="Luxury high-rise apartment building with pool deck" loading="lazy" decoding="async">
+          <h3>Luxury Apartments</h3>
+        </a>
+        <a class="apartment-card" href="/modern-apartments-premium.html">
+          <img class="apartment-image" src="real estate images/charlotte/charlotte.webp" alt="Modern apartment community with pool and outdoor seating" loading="lazy" decoding="async">
+          <h3>Modern Apartments</h3>
+        </a>
+      </div>
+    </section>
+
+    <section class="bridge">
+      <div class="bridge-inner">
+        <div>
+          <p class="brief-eyebrow">The part most renters miss</p>
+          <h2>A better result comes from knowing what the property will actually look at.</h2>
+          <p class="bridge-copy">Your brief result tells you where you stand. The next stage turns that result into a practical application strategy you can use before you tour, call a leasing office, or pay another application fee.</p>
+        </div>
+        <div class="value-stack" aria-label="What the next stage unlocks">
+          <div class="value-item"><div class="value-check">✓</div><div><strong>Your application risk check</strong><span>See which parts of your profile deserve attention first.</span></div></div>
+          <div class="value-item"><div class="value-check">✓</div><div><strong>Your document-ready list</strong><span>Know what to gather before a leasing office asks for it.</span></div></div>
+          <div class="value-item"><div class="value-check">✓</div><div><strong>Exact questions to ask</strong><span>Use simple scripts to learn a property’s screening rules before applying.</span></div></div>
+          <div class="value-item"><div class="value-check">✓</div><div><strong>Property-by-property comparison</strong><span>Compare what a property requires with the profile you already shared.</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="offer" id="nextStep">
+      <div class="offer-card">
+        <p class="brief-eyebrow">Your next RentReady step</p>
+        <h2>Turn this result into your personal rental strategy.</h2>
+        <p>You already know a no-deposit move-in may be worth exploring. Now see what could affect your application, what to prepare, and what to ask before you spend money applying to the home you want.</p>
+        <div class="offer-actions">
+          <a class="primary-btn" href="/game-plan.html">See My Personalized Next Steps →</a>
+          <a class="secondary-btn" href="/luxury-apartments-premium.html">Continue Browsing Homes</a>
+        </div>
+        <p class="offer-note">Built from the rental details you already shared — no need to start over.</p>
+      </div>
+      <p class="disclosure">RentReady provides educational rental-readiness guidance based on the information you provide. Deposit requirements, screening standards, and approval decisions vary by property. RentReady does not guarantee approval or a security-deposit waiver.</p>
+    </section>
+  </div>
+
+</section>
+
+<script src="/assets/checkout-client.js"></script>
+<script>
+(function(){
+  var ANSWERS_STORAGE_KEY = 'rrn_answers_v1';
+  var FOLDER_STORAGE_KEY = 'rrn_folder_checklist_v1';
+  var START_URL = '/Renter%20LeadForm.html';
+  var stage = document.getElementById('stage');
+  var report = document.getElementById('report');
+  var percentText = document.getElementById('percentText');
+  var phraseText = document.getElementById('phraseText');
+  var statusText = document.getElementById('statusText');
+  var barFill = document.getElementById('barFill');
+  var skipBtn = document.getElementById('skipBtn');
+  var needle = document.getElementById('needle');
+  var loaderEl = document.getElementById('loader');
+  var params = new URLSearchParams(window.location.search);
+  var loaderPreviewComplete = params.get('loaderPreview') === 'complete';
+  var reportPreview = params.get('reportPreview') === '1';
+
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function denyResultsAccess(){
+    document.body.style.opacity = '0';
+    window.location.replace(START_URL);
+  }
+
+  async function confirmResultsAccess(){
+    if (reportPreview || loaderPreviewComplete) return true;
+    var answers = readAnswers();
+    if (!answers || !answers.lead_id) return false;
+
+    if (window.rrnFetchEntitlements) {
+      try {
+        var ent = await rrnFetchEntitlements(answers.lead_id);
+        if (ent && ent.paid10) return true;
+      } catch (_e) {}
+    }
+
+    return !!(window.rrnHasRecentFlowAccess && rrnHasRecentFlowAccess('prescreen-results', { statuses: ['confirmed'] }));
+  }
+
+  function setBriefStatus(el, text, level){
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'status ' + level;
+  }
+
+  function buildBriefResult(){
+    var answers = readAnswers();
+    var annual = Number(answers.annual_income) || 0;
+    var rent = Number(answers.rent_budget) || 0;
+    var monthly = annual > 0 ? annual / 12 : 0;
+    var ratio = monthly > 0 && rent > 0 ? monthly / rent : 0;
+    var credit = answers.credit_score || '';
+    var creditGood = ['660_699','700_739','740_799','800_plus'].indexOf(credit) >= 0;
+    var creditMid = credit === '620_659';
+
+    var incomeStatus = document.getElementById('incomeStatus');
+    var creditStatus = document.getElementById('creditStatus');
+    var moveStatus = document.getElementById('moveStatus');
+    var strongestCopy = document.getElementById('strongestCopy');
+    var strongestStatus = document.getElementById('strongestStatus');
+    var verifyCopy = document.getElementById('verifyCopy');
+    var verifyStatus = document.getElementById('verifyStatus');
+    var outlookState = document.getElementById('outlookState');
+    var outlookCopy = document.getElementById('outlookCopy');
+
+    if (ratio >= 3) setBriefStatus(incomeStatus, 'Looks strong', 'good');
+    else if (ratio >= 2.5) setBriefStatus(incomeStatus, 'Close — verify', 'warn');
+    else if (ratio > 0) setBriefStatus(incomeStatus, 'Needs review', 'risk');
+    else setBriefStatus(incomeStatus, 'Not confirmed', 'warn');
+
+    if (creditGood) setBriefStatus(creditStatus, 'Positive range', 'good');
+    else if (creditMid) setBriefStatus(creditStatus, 'Worth checking', 'warn');
+    else if (credit) setBriefStatus(creditStatus, 'Needs review', 'warn');
+    else setBriefStatus(creditStatus, 'Not confirmed', 'warn');
+
+    if (answers.move_timeline) setBriefStatus(moveStatus, 'Plan is clear', 'good');
+    else setBriefStatus(moveStatus, 'Not confirmed', 'warn');
+
+    if (ratio >= 3){
+      if (strongestCopy) strongestCopy.textContent = 'Your reported income appears to give you a stronger starting point for homes near your target rent.';
+      if (strongestStatus) strongestStatus.textContent = 'Income looks strong';
+    } else if (creditGood){
+      if (strongestCopy) strongestCopy.textContent = 'Your selected credit range is one of the stronger signals in the information you shared.';
+      if (strongestStatus) strongestStatus.textContent = 'Credit is a positive signal';
+    } else if (answers.preferred_city || answers.move_timeline){
+      if (strongestCopy) strongestCopy.textContent = 'You already have a clear search direction, which makes it easier to compare properties before you apply.';
+      if (strongestStatus) strongestStatus.textContent = 'Search plan is clear';
+    } else {
+      if (strongestCopy) strongestCopy.textContent = 'Completing your RentReady questionnaire gives you a clearer starting point than applying without a plan.';
+      if (strongestStatus) strongestStatus.textContent = 'Profile started';
+    }
+
+    if (ratio > 0 && ratio < 2.5){
+      if (verifyCopy) verifyCopy.textContent = 'Confirm the property’s income requirement before paying an application fee. Your target rent may be high if the property uses a strict income multiple.';
+      if (verifyStatus) verifyStatus.textContent = 'Check income criteria';
+    } else if (credit && !creditGood){
+      if (verifyCopy) verifyCopy.textContent = 'Ask how the property reviews credit and whether it uses a fixed minimum, a broader screening model, or conditional approval.';
+      if (verifyStatus) verifyStatus.textContent = 'Check credit criteria';
+    } else {
+      if (verifyCopy) verifyCopy.textContent = 'Confirm the property’s written screening criteria, including income, credit, rental history, and any rules that could affect move-in costs.';
+      if (verifyStatus) verifyStatus.textContent = 'Confirm property rules';
+    }
+
+    if (ratio >= 3 && creditGood){
+      if (outlookState) outlookState.textContent = 'Promising Starting Point';
+      if (outlookCopy) outlookCopy.textContent = 'Your income and selected credit range are positive signals. A no-deposit move-in can still depend on the property’s own screening and deposit program.';
+    } else if (ratio >= 2.5 || creditGood || creditMid){
+      if (outlookState) outlookState.textContent = 'Worth Exploring';
+      if (outlookCopy) outlookCopy.textContent = 'Your answers show enough positive signals to keep no-deposit options in the conversation, but property-specific criteria still matter.';
+    } else {
+      if (outlookState) outlookState.textContent = 'Possible — Prepare First';
+      if (outlookCopy) outlookCopy.textContent = 'A no-deposit option may still exist, but your next move should be checking the property’s criteria and strengthening the parts of your profile they are most likely to review.';
+    }
+  }
+
+  function escapeHtml(value){
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function readAnswers(){
+    try {
+      return JSON.parse(sessionStorage.getItem(ANSWERS_STORAGE_KEY) || localStorage.getItem(ANSWERS_STORAGE_KEY) || '{}') || {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function money(value){
+    var num = Number(value);
+    if (!Number.isFinite(num) || num <= 0) return 'Not Yet Confirmed';
+    return '$' + Math.round(num).toLocaleString();
+  }
+
+  function formatTimeline(value){
+    return ({
+      asap: 'ASAP',
+      '1_month': 'within 1 month',
+      '3_months': 'in 1–3 months',
+      '6_months': 'in 3–6 months',
+      flexible: 'flexible'
+    })[value] || 'Not Yet Confirmed';
+  }
+
+  function creditLabel(value){
+    return ({
+      below_580: 'Below 580',
+      '580_619': '580–619',
+      '620_659': '620–659',
+      '660_699': '660–699',
+      '700_739': '700–739',
+      '740_799': '740–799',
+      '800_plus': '800+'
+    })[value] || 'Not Yet Confirmed';
+  }
+
+  function statusClass(level){
+    return level === 'risk' ? 'is-risk' : level === 'warn' ? 'is-warn' : '';
+  }
+
+  function createProfile(answers){
+    var annualIncome = Number(answers.annual_income);
+    var rentBudget = Number(answers.rent_budget);
+    var monthlyIncome = Number.isFinite(annualIncome) && annualIncome > 0 ? annualIncome / 12 : 0;
+    var incomeRatio = monthlyIncome && rentBudget ? monthlyIncome / rentBudget : 0;
+    var score = 52;
+    var strengths = [];
+    var riskFactors = [];
+    var categories = {};
+
+    if (incomeRatio >= 3){
+      score += 18;
+      strengths.push({ category:'Income', label:'Income Strength', status:'Strong', text:'Your reported income appears to support your target rental range.' });
+      categories.income = { label:'Income', state:'Looking Strong', level:'good', profile:'✓ Looks aligned', value: money(annualIncome) + ' annual income' };
+    } else if (incomeRatio >= 2.5){
+      score += 10;
+      strengths.push({ category:'Income', label:'Income Range', status:'Positive Signal', text:'Your income appears close to a common rent-to-income range.' });
+      riskFactors.push({ category:'Income', label:'Income-to-Rent Ratio', status:'Worth Checking', level:'warn', text:'Some properties use stricter income requirements. Confirm the exact rule before applying.', steps:['Ask whether the property uses gross or net income.', 'Compare your monthly income with the property rent requirement.', 'Prepare pay stubs or income documents before touring.'] });
+      categories.income = { label:'Income', state:'Worth Checking', level:'warn', profile:'⚠ Confirm ratio', value: money(annualIncome) + ' annual income' };
+    } else if (incomeRatio > 0){
+      score -= 8;
+      riskFactors.push({ category:'Income', label:'Income-to-Rent Ratio', status:'May Need Attention', level:'risk', text:'Your target rent may be high compared with reported income if the property uses a strict income multiple.', steps:['Ask the property for its exact income requirement.', 'Look for properties with flexible income criteria.', 'Prepare any additional income documentation that applies.'] });
+      categories.income = { label:'Income', state:'May Need Attention', level:'risk', profile:'⚠ Ask before applying', value: money(annualIncome) + ' annual income' };
+    } else {
+      riskFactors.push({ category:'Income', label:'Income Details', status:'Not Yet Confirmed', level:'warn', text:'Income details were not available for this review. Confirm what the property requires before applying.', steps:['Ask for the property income requirement.', 'Gather recent income documents.', 'Compare the requirement with your monthly income.'] });
+      categories.income = { label:'Income', state:'Not Yet Confirmed', level:'warn', profile:'⚠ Confirm criteria', value:'Not Yet Confirmed' };
+    }
+
+    var creditScore = answers.credit_score || '';
+    var creditMap = { below_580:-18, '580_619':-12, '620_659':-6, '660_699':8, '700_739':12, '740_799':16, '800_plus':18 };
+    score += creditMap[creditScore] || 0;
+    if (['660_699','700_739','740_799','800_plus'].indexOf(creditScore) >= 0){
+      strengths.push({ category:'Credit', label:'Credit Profile', status:'Positive Signal', text:'Your selected credit range may help you look more prepared at many properties.' });
+      categories.credit = { label:'Credit Profile', state:'Looking Strong', level:'good', profile:'✓ Looks aligned', value: creditLabel(creditScore) };
+    } else if (creditScore){
+      riskFactors.push({ category:'Credit', label:'Credit Profile', status:'Worth Checking', level:'warn', text:'Credit-related information may receive extra attention at properties with stricter screening requirements.', steps:['Review your credit report for errors.', 'Ask the property how it reviews credit.', 'Prepare a short explanation for any credit items you already know about.'] });
+      categories.credit = { label:'Credit Profile', state:'Worth Checking', level:'warn', profile:'⚠ Ask first', value: creditLabel(creditScore) };
+    } else {
+      riskFactors.push({ category:'Credit', label:'Credit Profile', status:'Not Yet Confirmed', level:'warn', text:'Credit details were not available in this review. Ask how the property handles credit before paying an application fee.', steps:['Ask whether there is a minimum credit standard.', 'Ask what happens when credit needs manual review.', 'Review your report before applying.'] });
+      categories.credit = { label:'Credit Profile', state:'Not Yet Confirmed', level:'warn', profile:'⚠ Confirm criteria', value:'Not Yet Confirmed' };
+    }
+
+    if (answers.preferred_city){
+      score += 3;
+      strengths.push({ category:'Search', label:'Search Focus', status:'Clear', text:'You identified where you want to look, which makes comparing properties easier.' });
+    }
+    if (answers.move_timeline){
+      score += answers.move_timeline === 'asap' ? 1 : 4;
+      strengths.push({ category:'Timing', label:'Move Timing', status:'Known', text:'Your move timing is clear, so you can ask properties about availability with more confidence.' });
+      categories.timing = { label:'Move Timing', state:'Confirmed', level:'good', profile:'✓ ' + formatTimeline(answers.move_timeline), value: formatTimeline(answers.move_timeline) };
+    } else {
+      categories.timing = { label:'Move Timing', state:'Not Yet Confirmed', level:'warn', profile:'⚠ Confirm timing', value:'Not Yet Confirmed' };
+    }
+    var bedsNeeded = Array.isArray(answers.beds_needed) ? answers.beds_needed : String(answers.beds_needed || '').split(',').filter(Boolean);
+    if (bedsNeeded.length){
+      strengths.push({ category:'Home Fit', label:'Home Needs', status:'Clear', text:'You selected the bedroom needs for your search, which helps you compare homes faster.' });
+    }
+
+    riskFactors.push({
+      category:'Rental History',
+      label:'Rental History',
+      status:'Not Yet Confirmed',
+      level:'warn',
+      text:'Rental history details were not part of the available data. Have landlord or lease information ready in case it is requested.',
+      steps:['Gather previous landlord contact information.', 'Keep current lease details nearby.', 'Ask whether the property requires rental references.']
+    });
+    categories.rentalHistory = { label:'Rental History', state:'Not Yet Confirmed', level:'warn', profile:'⚠ Ask first', value:'Not Yet Confirmed' };
+
+    riskFactors.push({
+      category:'Previous Housing Obligations',
+      label:'Previous Housing Obligations',
+      status:'Not Yet Confirmed',
+      level:'warn',
+      text:'Previous housing balances were not confirmed in the questionnaire data. Ask how the property reviews this before applying.',
+      steps:['Ask how previous landlord balances are reviewed.', 'Confirm what is showing on any screening reports.', 'Prepare documentation for paid or disputed balances if applicable.']
+    });
+    categories.housingBalances = { label:'Previous Landlord Debt', state:'Not Yet Confirmed', level:'warn', profile:'⚠ Ask first', value:'Not Yet Confirmed' };
+
+    score = Math.max(35, Math.min(92, Math.round(score)));
+    var status = score >= 80 ? 'STRONG' : score >= 62 ? 'GOOD — WITH ITEMS TO CHECK' : 'NEEDS PREPARATION';
+    var primaryRisk = riskFactors.find(function(item){ return item.level === 'risk'; }) || riskFactors[0];
+    var supportedStrengths = strengths.length ? strengths : [{ category:'Profile', label:'Questionnaire Complete', status:'Complete', text:'Your answers gave RentReady enough context to create a practical preparation plan.' }];
+
+    var recommendedDocuments = [
+      { group:'Identity', items:['Government-issued ID'] },
+      { group:'Income', items:['Recent pay stubs', 'Employment information', 'Additional income documentation if applicable'] },
+      { group:'Rental History', items:['Previous landlord information', 'Current lease information', 'Rental references if requested'] },
+      { group:'Other', items:['Property screening criteria', 'Balance documentation if applicable'] }
+    ];
+
+    var baseQuestions = [
+      { tag:'Criteria', text:'Before I submit an application, can you provide your written rental screening criteria?' },
+      { tag:'Income', text:'What income requirement do you use, and how is income calculated?' },
+      { tag:'Housing Balance', text:'How does your screening criteria address balances owed to previous landlords?' },
+      { tag:'Options', text:'Do you allow guarantors, co-signers, or conditional approval when applicable?' }
+    ];
+    var recommendedQuestions = baseQuestions.slice().sort(function(a, b){
+      var priority = primaryRisk && /income/i.test(primaryRisk.category) ? 'Income' : primaryRisk && /obligations/i.test(primaryRisk.category) ? 'Housing Balance' : primaryRisk && /credit/i.test(primaryRisk.category) ? 'Criteria' : 'Criteria';
+      return (a.tag === priority ? -1 : 0) - (b.tag === priority ? -1 : 0);
+    });
+
+    return {
+      score: score,
+      status: status,
+      strengths: supportedStrengths,
+      riskFactors: riskFactors,
+      primaryRisk: primaryRisk,
+      recommendedActions: primaryRisk ? primaryRisk.steps : [],
+      recommendedDocuments: recommendedDocuments,
+      recommendedQuestions: recommendedQuestions,
+      readinessCategories: categories,
+      propertyComparisonData: {
+        annualIncome: annualIncome || 0,
+        rentBudget: rentBudget || 0,
+        monthlyIncome: monthlyIncome || 0,
+        creditScore: creditScore,
+        incomeRatio: incomeRatio || 0
+      }
+    };
+  }
+
+  var rentReadyProfile = createProfile(readAnswers());
+  window.rentReadyProfile = rentReadyProfile;
+
+  function renderSignalList(id, items, emptyText){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = items.length ? items.map(function(item){
+      return '<li class="rr-signal"><div class="rr-signal-top"><div><div class="rr-signal-name">' + escapeHtml(item.label) + '</div><p>' + escapeHtml(item.text) + '</p></div><span class="rr-pill ' + statusClass(item.level) + '">' + escapeHtml(item.status) + '</span></div></li>';
+    }).join('') : '<li class="rr-signal"><div class="rr-signal-name">' + escapeHtml(emptyText) + '</div></li>';
+  }
+
+  function renderReport(){
+    var scoreValue = document.getElementById('scoreValue');
+    var scoreStatus = document.getElementById('scoreStatus');
+    var scoreSummary = document.getElementById('scoreSummary');
+    var meterState = document.getElementById('meterState');
+    var meterHeadline = document.getElementById('meterHeadline');
+    var meterSummary = document.getElementById('meterSummary');
+    var whyCopy = document.getElementById('whyCopy');
+    var positiveCount = document.getElementById('positiveCount');
+    var statusLevel = rentReadyProfile.score >= 80 ? 'good' : rentReadyProfile.score >= 62 ? 'warn' : 'risk';
+    if (scoreValue) scoreValue.textContent = rentReadyProfile.score;
+    if (scoreStatus){
+      scoreStatus.textContent = rentReadyProfile.status;
+      scoreStatus.className = 'rr-status-pill ' + statusClass(statusLevel);
+    }
+    if (scoreSummary) scoreSummary.textContent = 'You have ' + rentReadyProfile.strengths.length + ' positive signal' + (rentReadyProfile.strengths.length === 1 ? '' : 's') + ' working in your favor. We also found ' + rentReadyProfile.riskFactors.length + ' area' + (rentReadyProfile.riskFactors.length === 1 ? '' : 's') + ' worth checking before you spend money on applications.';
+    if (meterState) meterState.textContent = rentReadyProfile.status;
+    if (meterHeadline) meterHeadline.textContent = rentReadyProfile.score >= 80 ? 'Your profile is looking strong.' : rentReadyProfile.score >= 62 ? 'Your profile has strengths.' : 'Your profile needs preparation before applying.';
+    if (meterSummary) meterSummary.textContent = 'Before applying, there are ' + rentReadyProfile.riskFactors.length + ' area' + (rentReadyProfile.riskFactors.length === 1 ? '' : 's') + ' we recommend confirming.';
+    if (whyCopy) whyCopy.textContent = 'Your answers indicate that ' + rentReadyProfile.riskFactors.map(function(item){ return item.category.toLowerCase(); }).join(', ') + ' may receive additional attention at properties with stricter screening requirements.';
+
+    renderSignalList('strengthList', rentReadyProfile.strengths, 'No confirmed positive signals yet.');
+    renderSignalList('riskList', rentReadyProfile.riskFactors, 'No closer-look items found.');
+
+    var achievementGrid = document.getElementById('achievementGrid');
+    if (achievementGrid){
+      achievementGrid.innerHTML = rentReadyProfile.strengths.map(function(item){
+        return '<article class="rr-achievement"><span>' + escapeHtml(item.category) + '</span><strong>✓ ' + escapeHtml(item.status) + '</strong><p>' + escapeHtml(item.label) + '</p></article>';
+      }).join('');
+    }
+    if (positiveCount) positiveCount.textContent = rentReadyProfile.strengths.length + ' positive signal' + (rentReadyProfile.strengths.length === 1 ? ' found.' : 's found.');
+
+    var radarList = document.getElementById('radarList');
+    if (radarList){
+      var categories = Object.keys(rentReadyProfile.readinessCategories).map(function(key){ return rentReadyProfile.readinessCategories[key]; });
+      radarList.innerHTML = categories.map(function(item){
+        var icon = item.level === 'good' ? '🟢' : item.level === 'risk' ? '🔴' : '🟡';
+        return '<li class="rr-radar-item"><div><div class="rr-radar-name">' + escapeHtml(item.label) + '</div><p class="rr-radar-copy">' + escapeHtml(item.state) + '</p></div><span>' + icon + '</span></li>';
+      }).join('');
+    }
+
+    if (rentReadyProfile.primaryRisk){
+      document.getElementById('primaryRiskName').textContent = rentReadyProfile.primaryRisk.label;
+      document.getElementById('primaryRiskWhy').textContent = rentReadyProfile.primaryRisk.text;
+      document.getElementById('primaryRiskSteps').innerHTML = rentReadyProfile.primaryRisk.steps.map(function(step){ return '<li>' + escapeHtml(step) + '</li>'; }).join('');
+      document.getElementById('verifyCopy').textContent = rentReadyProfile.primaryRisk.text;
+    }
+
+    renderFolder();
+    renderQuestions();
+    updateComparison();
+  }
+
+  function folderState(){
+    try { return JSON.parse(localStorage.getItem(FOLDER_STORAGE_KEY) || '{}') || {}; }
+    catch (err) { return {}; }
+  }
+
+  function renderFolder(){
+    var el = document.getElementById('folderChecklist');
+    if (!el) return;
+    var saved = folderState();
+    el.innerHTML = rentReadyProfile.recommendedDocuments.map(function(group){
+      return '<article class="rr-panel"><h3>' + escapeHtml(group.group) + '</h3><ul class="rr-doc-list">' + group.items.map(function(item){
+        var key = group.group + ':' + item;
+        return '<li class="rr-doc-item"><label><input type="checkbox" data-doc-key="' + escapeHtml(key) + '"' + (saved[key] ? ' checked' : '') + '> <span>' + escapeHtml(item) + '</span></label></li>';
+      }).join('') + '</ul></article>';
+    }).join('');
+    updateFolderProgress();
+    el.querySelectorAll('input[type="checkbox"]').forEach(function(box){
+      box.addEventListener('change', function(){
+        var state = folderState();
+        state[box.dataset.docKey] = box.checked;
+        localStorage.setItem(FOLDER_STORAGE_KEY, JSON.stringify(state));
+        updateFolderProgress();
+      });
+    });
+  }
+
+  function updateFolderProgress(){
+    var boxes = document.querySelectorAll('[data-doc-key]');
+    var checked = document.querySelectorAll('[data-doc-key]:checked').length;
+    var pct = boxes.length ? Math.round((checked / boxes.length) * 100) : 0;
+    var pctEl = document.getElementById('folderPct');
+    var fill = document.getElementById('folderFill');
+    var success = document.getElementById('folderSuccess');
+    if (pctEl) pctEl.textContent = pct + '%';
+    if (fill) fill.style.width = pct + '%';
+    if (success) success.classList.toggle('is-visible', pct === 100);
+  }
+
+  function renderQuestions(){
+    var el = document.getElementById('questionList');
+    if (!el) return;
+    el.innerHTML = rentReadyProfile.recommendedQuestions.map(function(q, index){
+      return '<article class="rr-question-card"><div><p class="rr-eyebrow">Question ' + (index + 1) + ' — ' + escapeHtml(q.tag) + '</p><p>' + escapeHtml(q.text) + '</p></div><button class="rr-copy-btn" type="button" data-copy="' + escapeHtml(q.text) + '">Copy Question</button></article>';
+    }).join('');
+  }
+
+  function copyText(text, button){
+    function done(){
+      var old = button.textContent;
+      button.textContent = 'Copied ✓';
+      setTimeout(function(){ button.textContent = old; }, 1400);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(done);
+    } else {
+      done();
+    }
+  }
+
+  function comparisonRow(label, property, profile, level){
+    return '<div class="rr-compare-row"><strong>' + escapeHtml(label) + '</strong><span>Property: ' + escapeHtml(property) + '</span><span class="' + statusClass(level) + '">' + escapeHtml(profile) + '</span></div>';
+  }
+
+  function updateComparison(){
+    var results = document.getElementById('compareResults');
+    var summary = document.getElementById('compareSummary');
+    if (!results || !summary) return;
+    var rent = Number((document.getElementById('propertyRent') || {}).value);
+    var req = (document.getElementById('incomeRequirement') || {}).value || 'unknown';
+    var history = (document.getElementById('historyRequirement') || {}).value || 'unknown';
+    var balance = (document.getElementById('balancePolicy') || {}).value || 'unknown';
+    var creditNotes = ((document.getElementById('creditNotes') || {}).value || '').trim();
+    var aligned = 0;
+    var confirm = 0;
+
+    var incomeProperty = req === 'unknown' ? 'Confirm criteria' : req + '× rent';
+    var incomeProfile = '⚠ Confirm criteria';
+    var incomeLevel = 'warn';
+    if (rent > 0 && req !== 'unknown' && rentReadyProfile.propertyComparisonData.monthlyIncome){
+      var needed = rent * Number(req);
+      if (rentReadyProfile.propertyComparisonData.monthlyIncome >= needed){
+        incomeProfile = '✓ Looks aligned';
+        incomeLevel = 'good';
+        aligned++;
+      } else {
+        incomeProfile = '⚠ May need attention';
+        incomeLevel = 'risk';
+        confirm++;
+      }
+    } else {
+      confirm++;
+    }
+
+    var historyProfile = history === 'unknown' ? '⚠ Ask first' : '⚠ Confirm details';
+    var balanceProfile = balance === 'unknown' ? '⚠ Ask first' : balance === 'strict' ? '⚠ May need attention' : '✓ Policy may be flexible';
+    var balanceLevel = balance === 'strict' ? 'risk' : balance === 'unknown' ? 'warn' : 'good';
+    if (balanceLevel === 'good') aligned++; else confirm++;
+    confirm += history === 'unknown' ? 1 : 1;
+
+    var creditProfile = creditNotes ? '⚠ Compare with your credit range' : (rentReadyProfile.readinessCategories.credit && rentReadyProfile.readinessCategories.credit.profile) || '⚠ Ask first';
+    confirm++;
+
+    results.innerHTML =
+      comparisonRow('Income', incomeProperty, incomeProfile, incomeLevel) +
+      comparisonRow('Rental History', history === 'unknown' ? 'Confirm criteria' : history + ' months', historyProfile, 'warn') +
+      comparisonRow('Credit', creditNotes ? creditNotes : 'Confirm criteria', creditProfile, 'warn') +
+      comparisonRow('Previous Landlord Debt', balance === 'unknown' ? 'Confirm criteria' : balance.replace(/_/g, ' '), balanceProfile, balanceLevel);
+    summary.textContent = aligned + ' area' + (aligned === 1 ? '' : 's') + ' look aligned ✓ ' + confirm + ' thing' + (confirm === 1 ? '' : 's') + ' to confirm before applying.';
+  }
+
+  var phrases = [
+    { at: 0,  text: 'Pulling credit signals' },
+    { at: 28, text: 'Checking rental history' },
+    { at: 55, text: 'Verifying income data' },
+    { at: 80, text: 'Calculating deposit risk' }
+  ];
+
+  var duration = 3000; // ms
+  var start = null;
+  var done = false;
+  var raf = null;
+
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+  function setPercent(p){
+    var shown = Math.round(p);
+    percentText.innerHTML = shown + '<span>%</span>';
+    barFill.style.width = p + '%';
+    var current = phrases[0].text;
+    for (var i = 0; i < phrases.length; i++){
+      if (p >= phrases[i].at) current = phrases[i].text;
+    }
+    if (phraseText.textContent !== current){
+      phraseText.style.opacity = '0';
+      setTimeout(function(){
+        phraseText.textContent = current;
+        phraseText.style.opacity = '1';
+      }, 140);
+    }
+  }
+
+  function finish(){
+    if (done) return;
+    done = true;
+    if (raf) cancelAnimationFrame(raf);
+    setPercent(100);
+    statusText.textContent = 'Scan complete';
+
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (reduced){
+      stage.classList.add('is-done');
+      stage.setAttribute('aria-hidden', 'true');
+      report.classList.add('is-revealed');
+      report.removeAttribute('aria-hidden');
+      document.body.classList.add('report-mode');
+      if (needle) needle.style.transform = 'rotate(' + Math.round((rentReadyProfile.score / 100) * 180 - 90) + 'deg)';
+      return;
+    }
+
+    setTimeout(function(){
+      stage.classList.add('is-done');
+      stage.setAttribute('aria-hidden', 'true');
+    }, 220);
+    setTimeout(function(){
+      report.classList.add('is-revealed');
+      report.removeAttribute('aria-hidden');
+      document.body.classList.add('report-mode');
+    }, 520);
+    setTimeout(function(){
+      if (needle) needle.style.transform = 'rotate(' + Math.round((rentReadyProfile.score / 100) * 180 - 90) + 'deg)';
+    }, 1020);
+  }
+
+  function tick(ts){
+    if (start === null) start = ts;
+    var elapsed = ts - start;
+    var t = Math.min(elapsed / duration, 1);
+    var eased = easeOutCubic(t);
+    setPercent(eased * 100);
+    if (t < 1){
+      raf = requestAnimationFrame(tick);
+    } else {
+      finish();
+    }
+  }
+
+  async function boot(){
+    var allowed = await confirmResultsAccess();
+    if (!allowed) {
+      denyResultsAccess();
+      return;
+    }
+
+    if (reportPreview){
+      done = true;
+      stage.classList.add('is-done');
+      stage.setAttribute('aria-hidden', 'true');
+      report.classList.add('is-revealed');
+      report.removeAttribute('aria-hidden');
+      document.body.classList.add('report-mode');
+      if (needle) needle.style.transform = 'rotate(' + Math.round((rentReadyProfile.score / 100) * 180 - 90) + 'deg)';
+    } else if (loaderPreviewComplete){
+      document.documentElement.classList.add('loader-preview-complete');
+      loaderEl.classList.add('is-complete');
+      setPercent(100);
+      statusText.textContent = 'Scan complete';
+      phraseText.textContent = 'Calculating deposit risk';
+    } else if (reduced){
+      finish();
+    } else {
+      raf = requestAnimationFrame(tick);
+    }
+
+    skipBtn.addEventListener('click', finish);
+    stage.addEventListener('click', function(e){
+      if (e.target === skipBtn) return;
+      finish();
+    });
+
+    buildBriefResult();
+
+    var scrollCue = document.querySelector('.scroll-cue');
+    function updateScrollCue(){
+      if (!scrollCue) return;
+      scrollCue.classList.toggle('is-hidden', window.scrollY > 80);
+    }
+    updateScrollCue();
+    window.addEventListener('scroll', updateScrollCue, { passive: true });
+
+    document.addEventListener('click', function(e){
+      var scrollButton = e.target.closest('[data-target]');
+      if (scrollButton){
+        var target = document.getElementById(scrollButton.dataset.target);
+        if (target) target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+      }
+      var copyButton = e.target.closest('[data-copy]');
+      if (copyButton) copyText(copyButton.dataset.copy, copyButton);
+    });
+
+    var whyToggle = document.getElementById('whyToggle');
+    if (whyToggle){
+      whyToggle.addEventListener('click', function(){
+        var box = document.getElementById('whyBox');
+        var open = box.classList.toggle('is-open');
+        whyToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    }
+
+    ['propertyName','propertyRent','incomeRequirement','historyRequirement','creditNotes','balancePolicy','cosignerPolicy'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('input', updateComparison);
+      if (el) el.addEventListener('change', updateComparison);
+    });
+  }
+
+  boot();
+})();
+</script>
+
+</body>
+</html>

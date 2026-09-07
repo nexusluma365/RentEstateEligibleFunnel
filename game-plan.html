@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RentReady Network — Your RentReady Game Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --green:        #1A4731;
+  --green-mid:    #22593D;
+  --green-bright: #2D7A52;
+  --green-accent: #34A46C;
+  --amber:        #B7860B;
+  --amber-bg:     #FBF3DE;
+  --white:        #FFFFFF;
+  --off-white:    #F3F6F3;
+  --muted:        #637268;
+  --muted-lt:     #A2B0A7;
+  --border:       rgba(26,71,49,0.11);
+  --border-md:    rgba(26,71,49,0.17);
+  --font: -apple-system, BlinkMacSystemFont, 'DM Sans', 'Helvetica Neue', sans-serif;
+  --ease-butter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+}
+html, body { min-height: 100%; font-family: var(--font); background: var(--off-white); color: var(--green); }
+body { padding: 0 24px 60px; }
+.bg { position: fixed; inset: 0; z-index: 0; background: var(--off-white); pointer-events: none; }
+.blob { position: absolute; border-radius: 50%; filter: blur(100px); animation: drift 22s ease-in-out infinite alternate; }
+.blob-1 { width: 620px; height: 620px; background: #2D7A52; opacity: 0.13; top: -200px; right: -140px; }
+.blob-2 { width: 460px; height: 460px; background: #1A4731; opacity: 0.10; bottom: 10%; left: -160px; animation-delay: -10s; }
+@keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(24px,-30px) scale(1.05); } }
+
+.nav { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 26px 0 0; max-width: 1180px; margin: 0 auto; }
+.brand { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; color: var(--green); display: flex; align-items: center; gap: 9px; }
+.brand-icon { width: 28px; height: 28px; background: var(--green); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.brand-icon svg { width: 14px; height: 14px; stroke: #fff; fill: none; }
+.steps { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-lt); }
+.steps .s.on { color: var(--green); }
+.steps .sep { color: var(--muted-lt); }
+
+.wrap { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 24px 0 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); gap: 22px; align-items: start; }
+
+.card { background: rgba(255,255,255,0.92); backdrop-filter: blur(30px) saturate(180%); border-radius: 14px; border: 1px solid rgba(255,255,255,0.95); box-shadow: 0 2px 4px rgba(26,71,49,0.04), 0 16px 40px rgba(26,71,49,0.07); padding: 36px; margin-top: 0; }
+.wrap > .card:first-child,
+.wrap > .card:last-child { grid-column: 1 / -1; }
+@media (max-width:900px){ body{padding:0 12px 44px}.nav{padding-top:18px;flex-wrap:wrap}.wrap{max-width:640px;display:block;padding-top:0}.card{margin-top:22px} }
+@media (max-width:520px){ .card{ padding:26px 22px; border-radius:22px; } }
+
+.eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--green-accent); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.h1 { font-size: 28px; font-weight: 300; letter-spacing: -1px; line-height: 1.15; color: var(--green); margin-bottom: 10px; }
+.h1 strong { font-weight: 600; }
+.h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.4px; line-height: 1.25; color: var(--green); margin-bottom: 10px; }
+.p { font-size: 15px; line-height: 1.65; color: var(--muted); margin-bottom: 4px; }
+.p strong { color: var(--green); font-weight: 600; }
+
+.check-badge { width: 56px; height: 56px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; box-shadow: 0 8px 24px rgba(26,71,49,0.25); }
+.check-badge svg { width: 24px; height: 24px; stroke: #fff; fill: none; }
+
+.check-points { display: flex; flex-direction: column; gap: 10px; margin: 18px 0 4px; }
+.check-point { display: flex; align-items: flex-start; gap: 10px; font-size: 14.5px; color: var(--green); line-height: 1.5; }
+.check-point svg { width: 17px; height: 17px; stroke: var(--green-accent); fill: none; flex-shrink: 0; margin-top: 2px; }
+
+.pay-box { border: 1.5px solid var(--border-md); border-radius: 20px; padding: 26px 24px; margin-top: 22px; background: linear-gradient(180deg, rgba(52,164,108,0.05), rgba(255,255,255,0.4)); }
+.pay-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+.pay-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.pay-price { font-size: 30px; font-weight: 700; color: var(--green); letter-spacing: -1px; }
+
+.btn-primary { width: 100%; padding: 17px 22px; border: none; border-radius: 15px; background: var(--green); color: #fff; font-family: var(--font); font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.28s var(--ease-butter), background 0.28s var(--ease-butter), box-shadow 0.28s var(--ease-butter); margin-top: 16px; text-decoration: none; box-shadow: 0 8px 24px rgba(26,71,49,0.16); }
+.btn-primary:hover { background: var(--green-mid); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(26,71,49,0.24); }
+.btn-primary svg { width: 16px; height: 16px; stroke: #fff; fill: none; }
+.btn-secondary { width: 100%; padding: 15px 22px; border: 1.5px solid var(--border-md); border-radius: 15px; background: transparent; color: var(--green); font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; display: block; margin-top: 10px; transition: background 0.28s var(--ease-butter), border-color 0.28s var(--ease-butter), transform 0.28s var(--ease-butter); }
+.btn-secondary:hover { background: rgba(26,71,49,0.05); border-color: var(--green); transform: translateY(-1px); }
+.microcopy { text-align: center; font-size: 12px; color: var(--muted-lt); margin-top: 10px; font-weight: 500; }
+.disclosure { font-size: 12px; color: var(--muted-lt); line-height: 1.6; margin-top: 14px; }
+.small-link { display: block; text-align: center; font-size: 12.5px; color: var(--muted-lt); margin-top: 14px; text-decoration: underline; transition: color .28s var(--ease-butter); }
+.small-link:hover { color: var(--green); }
+.pay-error { text-align: center; font-size: 12.5px; color: var(--amber); margin-top: 10px; font-weight: 600; }
+.fade-in { opacity: 0; animation: rrnFade 0.4s var(--ease-out) forwards; }
+@keyframes rrnFade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+
+.priority { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.priority:last-child { border-bottom: none; }
+.priority-num { width: 30px; height: 30px; border-radius: 50%; background: var(--green); color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.priority-t { font-size: 15px; font-weight: 700; color: var(--green); margin-bottom: 3px; }
+.priority-p { font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+
+.week { border: 1.5px solid var(--border); border-radius: 16px; padding: 16px 18px; margin-top: 10px; background: rgba(255,255,255,0.5); }
+.week-t { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--green-accent); margin-bottom: 6px; }
+.week-p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+.checklist { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.chk-row { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--green); line-height: 1.5; }
+.chk-row svg { width: 16px; height: 16px; stroke: var(--green-accent); fill: none; flex-shrink: 0; margin-top: 3px; }
+
+.hidden { display: none !important; }
+.center { text-align: center; }
+.skeleton { text-align: center; padding: 80px 0; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="bg"><div class="blob blob-1"></div><div class="blob blob-2"></div></div>
+
+<div class="nav">
+  <div class="brand">
+    <div class="brand-icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg></div>
+    RentReady <span style="font-weight:800">Network</span>
+  </div>
+  <div class="steps">
+    <span class="s on">Pre-Screen</span><span class="sep">→</span>
+    <span class="s on">Game Plan</span><span class="sep">→</span>
+    <span class="s" id="navNext">Next Steps</span>
+  </div>
+</div>
+
+<div class="wrap" id="content">
+  <div class="skeleton">Loading…</div>
+</div>
+
+<script src="/assets/checkout-client.js"></script>
+<script>
+const ANSWERS_KEY = 'rrn_answers_v1';
+const PAID10_KEY = 'rrn_paid_10';
+const PAID27_KEY = 'rrn_paid_27';
+const RESULTS_URL = '/After%20Payment%20Results.html';
+const CREDIT_KIT_URL = '/credit-action-package.html';
+const MEMBERSHIP_URL = '/membership.html';
+
+// ── PAYMENT CONFIG ─────────────────────────────────────────────
+// This is a real one-click charge against the card saved during the $10
+// pre-screen — no card form, no redirect to Stripe's site. It's powered by
+// the Netlify Functions in /netlify/functions (see charge-upsell.js) plus
+// the shared /assets/checkout-client.js helper loaded below.
+//
+// Netlify serves Stripe's publishable key through /.netlify/functions/config.
+const STRIPE_PUBLISHABLE_KEY = '';
+// ─────────────────────────────────────────────────────────────
+
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+
+function loadAnswers() {
+  try { return JSON.parse(sessionStorage.getItem(ANSWERS_KEY) || 'null'); }
+  catch (_e) { return null; }
+}
+
+function svgCheck(){ return '<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>'; }
+
+function creditTier(code) {
+  if (['below_580','580_619','620_659'].includes(code)) return 'low';
+  if (['660_699','700_739'].includes(code)) return 'mid';
+  if (['740_799','800_plus'].includes(code)) return 'strong';
+  return 'unknown';
+}
+function incomeMeetsBenchmark(income, rent) {
+  if (!income || !rent) return null;
+  return (income / 12) >= (rent * 3);
+}
+function determineFocus(answers) {
+  const income = Number(answers.annual_income) || null;
+  const rent = Number(answers.rent_budget) || null;
+  const tier = creditTier(answers.credit_score || '');
+  const benchmarkMet = incomeMeetsBenchmark(income, rent);
+  if (tier === 'low' || tier === 'mid') return 'credit';
+  if (tier === 'strong' && benchmarkMet === false) return 'income';
+  return 'general';
+}
+
+// ── RENDER: LOCKED (pre-payment) — the $27 offer ─────────────────
+function renderLocked(answers) {
+  const first = (answers && answers.first_name) || 'there';
+  const container = document.getElementById('content');
+  container.innerHTML = `
+    <div class="card">
+      <div class="eyebrow">Turn Your Results Into A Game Plan</div>
+      <div class="h1">${esc(first)}, know what to <strong>do next.</strong></div>
+      <div class="p">Now you know what may be affecting your rental profile.</div>
+      <div class="p" style="margin-top:6px;">Your next step is knowing what to work on first.</div>
+      <div class="p" style="margin-top:10px;">Instead of guessing what to do next, build a step-by-step plan around the answers you already gave us.</div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Your RentReady Game Plan</div>
+      <div class="check-points">
+        <div class="check-point">${svgCheck()}<span>What to work on first</span></div>
+        <div class="check-point">${svgCheck()}<span>What can wait</span></div>
+        <div class="check-point">${svgCheck()}<span>What to prepare before applying</span></div>
+        <div class="check-point">${svgCheck()}<span>Questions to ask before paying an application fee</span></div>
+        <div class="check-point">${svgCheck()}<span>Your move-in preparation checklist</span></div>
+        <div class="check-point">${svgCheck()}<span>A simple 30-day action plan based on your profile</span></div>
+      </div>
+      <div class="p" style="margin-top:14px;"><strong>You already know where you stand. Now know what to do next.</strong></div>
+
+      <div class="pay-box">
+        <div class="pay-row"><span class="pay-label">RentReady Game Plan</span><span class="pay-price">$27</span></div>
+        <button class="btn-primary" id="gpBuyBtn" onclick="handleGamePlanPurchase()">Build My RentReady Game Plan <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <div class="microcopy">One-time $27 · Uses your saved payment method</div>
+        <div id="gpError"></div>
+      </div>
+      <a class="small-link" href="${RESULTS_URL}">Continue with my current results</a>
+      <div class="disclosure">This charge uses the payment method you provided for your pre-screen. You'll always see the price and a clear button before anything is charged — nothing is billed automatically.</div>
+    </div>
+  `;
+}
+
+async function handleGamePlanPurchase() {
+  const btn = document.getElementById('gpBuyBtn');
+  const errBox = document.getElementById('gpError');
+  if (btn.dataset.busy === '1') return; // guard against double-click / duplicate charge
+  btn.dataset.busy = '1';
+  btn.disabled = true;
+  errBox.innerHTML = '';
+  const originalLabel = btn.innerHTML;
+  btn.innerHTML = 'Processing…';
+
+  const stripeKey = await rrnGetStripePublishableKey(STRIPE_PUBLISHABLE_KEY);
+  const status = await rrnChargeUpsell('gameplan', stripeKey);
+
+  if (status === 'succeeded') {
+    try { sessionStorage.setItem(PAID27_KEY, '1'); } catch (_e) {}
+    renderUnlocked(loadAnswers());
+    return;
+  }
+
+  if (status === 'processing') {
+    btn.innerHTML = 'Confirming your payment…';
+    pollForGamePlanCompletion(btn, originalLabel, errBox);
+    return;
+  }
+
+  // Failed — restore the button, show the message, and only NOW fade in
+  // the option to move on without this purchase.
+  btn.disabled = false;
+  btn.dataset.busy = '0';
+  btn.innerHTML = originalLabel;
+  errBox.innerHTML = `
+    <div class="pay-error">We couldn't complete this purchase with your saved payment method.</div>
+    <a class="small-link fade-in" href="#" onclick="skipGamePlan(event)">Continue Without This →</a>
+  `;
+}
+
+function pollForGamePlanCompletion(btn, originalLabel, errBox) {
+  const leadId = rrnLeadId();
+  let attempts = 0;
+  const check = async () => {
+    attempts++;
+    const ent = await rrnFetchEntitlements(leadId);
+    if (ent && ent.paid27) {
+      try { sessionStorage.setItem(PAID27_KEY, '1'); } catch (_e) {}
+      renderUnlocked(loadAnswers());
+      return;
+    }
+    if (attempts >= 6) {
+      btn.disabled = false;
+      btn.dataset.busy = '0';
+      btn.innerHTML = originalLabel;
+      errBox.innerHTML = `
+        <div class="pay-error">Your payment is still processing. It's safe to check back shortly.</div>
+        <a class="small-link fade-in" href="#" onclick="skipGamePlan(event)">Continue Without This →</a>
+      `;
+      return;
+    }
+    setTimeout(check, 2000);
+  };
+  setTimeout(check, 2000);
+}
+
+function skipGamePlan(evt) {
+  if (evt) evt.preventDefault();
+  renderSkipped();
+}
+
+async function handleEmailGamePlan() {
+  const btn = document.getElementById('gpEmailBtn');
+  if (!btn) return;
+  const original = btn.textContent;
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+  const ok = await rrnEmailAsset('gameplan');
+  btn.textContent = ok ? 'Sent ✓' : 'Could Not Send — Try Again';
+  btn.disabled = ok;
+}
+
+// ── RENDER: SKIPPED — moved on without buying, no product delivered ──
+function renderSkipped() {
+  const container = document.getElementById('content');
+  container.innerHTML = `
+    <div class="card">
+      <div class="eyebrow">Continuing Without The Game Plan</div>
+      <div class="h2">No problem — you can pick this up again any time.</div>
+      <div class="p">Your $10 pre-screen results are still yours. Here's what's next.</div>
+      <a class="btn-secondary" href="${MEMBERSHIP_URL}">See RentReady Support →</a>
+      <a class="small-link" href="${RESULTS_URL}">Back to my pre-screen results</a>
+    </div>
+  `;
+}
+
+// ── RENDER: UNLOCKED (post-payment) — the actual game plan ───────
+function renderUnlocked(answers) {
+  const first = answers.first_name || 'there';
+  const focus = determineFocus(answers);
+
+  const priorities = focus === 'credit' ? [
+    { t: 'Review what\'s on your credit and rental history', p: 'Pull your reports and look for anything that looks inaccurate, incomplete, or unfamiliar before a landlord does.' },
+    { t: 'Strengthen your documentation', p: 'Line up pay stubs, ID, and proof of address so nothing slows your application down once you\'re ready.' },
+    { t: 'Confirm your move-in budget', p: 'Know your realistic upfront number — deposit, first month, and any fees — before you start touring.' },
+  ] : focus === 'income' ? [
+    { t: 'Close the gap between income and rent budget', p: 'Consider a slightly different rent range, a qualified co-signer where accepted, or additional income documentation.' },
+    { t: 'Keep your credit profile in good shape', p: 'It already looks like one of your stronger areas — don\'t let new balances or missed payments change that before you apply.' },
+    { t: 'Prepare your documents and rental history', p: 'Have references, past landlord contacts, and proof of income ready to go.' },
+  ] : [
+    { t: 'Prepare your documents and rental history', p: 'Pay stubs, ID, proof of address, and references — ready before you need them, not after.' },
+    { t: 'Confirm your move-in budget', p: 'Know your realistic upfront number so an application fee doesn\'t catch you off guard.' },
+    { t: 'Shortlist properties that fit your criteria', p: 'Use your budget and timeline to narrow down where you actually apply.' },
+  ];
+
+  const checklist = focus === 'credit' ? [
+    'Pull your credit reports from all three bureaus',
+    'Gather pay stubs or income documentation',
+    'Have a government-issued ID ready',
+    'Collect previous landlord contact information',
+    'Confirm your move-in budget, including deposit and fees',
+  ] : [
+    'Gather pay stubs or income documentation',
+    'Have a government-issued ID ready',
+    'Collect previous landlord contact information',
+    'Confirm your move-in budget, including deposit and fees',
+    'Write down 2–3 questions to ask before applying',
+  ];
+
+  const weeks = [
+    { t: 'Week 1', p: focus === 'credit' ? 'Pull your credit reports and read through them line by line. Note anything that looks off.' : 'Gather your documents — pay stubs, ID, proof of address, and landlord references.' },
+    { t: 'Week 2', p: focus === 'credit' ? 'Decide which items, if any, are worth formally reviewing or disputing.' : 'Confirm your move-in budget and shortlist 3–5 properties that fit your criteria.' },
+    { t: 'Week 3', p: 'Reach out to previous landlords or references so they\'re expecting a call.' },
+    { t: 'Week 4', p: 'Do a final review of your rental profile, then start applying with confidence.' },
+  ];
+
+  const container = document.getElementById('content');
+  let html = `
+    <div class="card">
+      <div class="check-badge">${svgCheck()}</div>
+      <div class="eyebrow">Game Plan Unlocked</div>
+      <div class="h1">${esc(first)}, here's your <strong>RentReady Game Plan.</strong></div>
+      <div class="p">A step-by-step plan built around the answers you already gave us.</div>
+    </div>
+
+    <div class="card">
+      <div class="h2">Your Priorities</div>
+      ${priorities.map((pr,i) => `
+        <div class="priority">
+          <div class="priority-num">${i+1}</div>
+          <div><div class="priority-t">${esc(pr.t)}</div><div class="priority-p">${esc(pr.p)}</div></div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="h2">Before You Apply</div>
+      <div class="checklist">
+        ${checklist.map(c => `<div class="chk-row">${svgCheck()}<span>${esc(c)}</span></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="h2">Your 30-Day Plan</div>
+      ${weeks.map(w => `<div class="week"><div class="week-t">${w.t}</div><div class="week-p">${w.p}</div></div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="h2">Your Game Plan Is Ready</div>
+      <div class="p">Download it any time, or we can send a copy to your email.</div>
+      <a class="btn-secondary" href="${rrnDownloadUrl('gameplan')}">Download My Game Plan</a>
+      <button class="btn-secondary" id="gpEmailBtn" onclick="handleEmailGamePlan()" style="cursor:pointer;">Email My Game Plan</button>
+    </div>
+  `;
+
+  if (focus === 'credit') {
+    html += `
+    <div class="card">
+      <div class="eyebrow">One Part Of Your Game Plan Deserves A Closer Look</div>
+      <div class="h2">Your answers suggest your credit or rental history is worth reviewing before you apply.</div>
+      <div class="p">If something being reported is inaccurate, incomplete, or cannot be properly verified, knowing how to review and challenge that information can help you take the right next step.</div>
+      <a class="btn-primary" href="${CREDIT_KIT_URL}">Add The Credit Action Kit <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <div class="microcopy">One-time $97 · One-click purchase</div>
+      <a class="small-link" href="${MEMBERSHIP_URL}">Continue with my current game plan</a>
+    </div>
+    `;
+  } else {
+    html += `
+    <div class="card">
+      <div class="eyebrow">You Don't Have To Figure Out Every Next Step Alone</div>
+      <div class="h2">Getting rental-ready can take more than one day.</div>
+      <div class="p">Questions come up. Documents change. And eventually, it's time to decide where and when to apply. RentReady Support gives you a place to keep moving forward.</div>
+      <a class="btn-secondary" href="${MEMBERSHIP_URL}">See RentReady Support →</a>
+    </div>
+    `;
+  }
+
+  container.innerHTML = html;
+}
+
+// ── BOOT ──────────────────────────────────────────────────────
+(async function boot() {
+  const answers = loadAnswers();
+  const container = document.getElementById('content');
+
+  if (!answers) {
+    container.innerHTML = `
+      <div class="card center">
+        <div class="eyebrow">Pre-Screen Required</div>
+        <div class="h2">Complete your RentReady pre-screen first.</div>
+        <div class="p">Your Game Plan is built from your pre-screen results.</div>
+        <a class="btn-primary" href="${RESULTS_URL}">Go To My Pre-Screen <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>`;
+    return;
+  }
+
+  // Server-side entitlements are the source of truth — this is what makes
+  // a refresh, a back-button press, or a returning visit on a new tab all
+  // show the correct state instead of trusting only this browser's
+  // sessionStorage flags.
+  const ent = await rrnFetchEntitlements(answers.lead_id);
+
+  if (!ent || !ent.paid10) {
+    container.innerHTML = `
+      <div class="card center">
+        <div class="eyebrow">Pre-Screen Required</div>
+        <div class="h2">Complete your RentReady pre-screen first.</div>
+        <div class="p">Your Game Plan is built from your pre-screen results.</div>
+        <a class="btn-primary" href="${RESULTS_URL}">Go To My Pre-Screen <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>`;
+    return;
+  }
+
+  try { sessionStorage.setItem(PAID10_KEY, '1'); } catch (_e) {}
+
+  if (ent.paid27) {
+    try { sessionStorage.setItem(PAID27_KEY, '1'); } catch (_e) {}
+    renderUnlocked(answers);
+  } else {
+    renderLocked(answers);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RentReady Support — Membership</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --green: #1A4731; --green-mid:#22593D; --green-bright:#2D7A52; --green-accent:#34A46C;
+  --white:#FFFFFF; --off-white:#F3F6F3; --muted:#637268; --muted-lt:#A2B0A7;
+  --border: rgba(26,71,49,0.11); --border-md: rgba(26,71,49,0.17);
+  --font: -apple-system, BlinkMacSystemFont, 'DM Sans', 'Helvetica Neue', sans-serif;
+  --ease-butter: cubic-bezier(0.16, 1, 0.3, 1);
+}
+html, body { min-height:100%; font-family:var(--font); background:var(--off-white); color:var(--green); }
+body { padding:0 24px 60px; }
+.bg { position: fixed; inset: 0; z-index: 0; background: var(--off-white); pointer-events:none; }
+.blob { position:absolute; border-radius:50%; filter: blur(100px); animation: drift 22s ease-in-out infinite alternate; }
+.blob-1 { width:600px; height:600px; background:#2D7A52; opacity:.13; top:-190px; right:-140px; }
+.blob-2 { width:440px; height:440px; background:#1A4731; opacity:.10; bottom:6%; left:-150px; animation-delay:-9s; }
+@keyframes drift { from{transform:translate(0,0) scale(1);} to{transform:translate(24px,-30px) scale(1.05);} }
+.nav { position: relative; z-index: 2; display:flex; align-items:center; justify-content:space-between; gap:28px; padding:26px 0 0; max-width:1180px; margin:0 auto; }
+.brand { font-size:15px; font-weight:600; letter-spacing:-0.3px; color:var(--green); display:flex; align-items:center; gap:9px; }
+.brand-icon { width:28px; height:28px; background:var(--green); border-radius:8px; display:flex; align-items:center; justify-content:center; }
+.brand-icon svg { width:14px; height:14px; stroke:#fff; fill:none; }
+.steps { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--green); }
+.wrap { position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:24px 0 0; display:grid; grid-template-columns:minmax(0,1fr) minmax(360px,520px); gap:22px; align-items:start; }
+.card { background: rgba(255,255,255,0.92); backdrop-filter: blur(30px) saturate(180%); border-radius:14px; border:1px solid rgba(255,255,255,0.95); box-shadow:0 2px 4px rgba(26,71,49,.04),0 16px 40px rgba(26,71,49,.07); padding:36px; margin-top:0; }
+.wrap > .card:first-child,
+.wrap > .card:last-child { grid-column:1 / -1; }
+@media (max-width:900px){ body{padding:0 12px 44px}.nav{padding-top:18px;flex-wrap:wrap}.wrap{max-width:640px;display:block;padding-top:0}.card{margin-top:22px} }
+@media (max-width:520px){ .card{ padding:26px 22px; border-radius:22px; } }
+.eyebrow { font-size:10.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--green-accent); margin-bottom:10px; }
+.h1 { font-size:28px; font-weight:300; letter-spacing:-1px; line-height:1.18; color:var(--green); margin-bottom:12px; }
+.h1 strong { font-weight: 600; }
+.h2 { font-size:19px; font-weight:600; letter-spacing:-0.4px; color:var(--green); margin-bottom:10px; }
+.p { font-size:15px; line-height:1.65; color:var(--muted); margin-bottom:4px; }
+.p strong { color: var(--green); font-weight: 600; }
+.check-points { display: flex; flex-direction: column; gap: 10px; margin: 18px 0 4px; }
+.check-point { display: flex; align-items: flex-start; gap: 10px; font-size: 14.5px; color: var(--green); line-height: 1.5; }
+.check-point svg { width: 17px; height: 17px; stroke: var(--green-accent); fill: none; flex-shrink: 0; margin-top: 2px; }
+.plans { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+@media (max-width: 520px) { .plans { grid-template-columns: 1fr; } }
+.plan { border: 1.5px solid var(--border-md); border-radius: 20px; padding: 22px 20px; background: rgba(255,255,255,0.5); display: flex; flex-direction: column; }
+.plan.featured { border-color: var(--green-accent); background: linear-gradient(180deg, rgba(52,164,108,0.07), rgba(255,255,255,0.5)); position: relative; }
+.plan-badge { position: absolute; top: -11px; left: 20px; background: var(--green); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; }
+.plan-label { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.plan-tag { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.plan-price { font-size: 30px; font-weight: 700; color: var(--green); letter-spacing: -1px; }
+.plan-price span { font-size: 13px; font-weight: 600; color: var(--muted); }
+.btn-primary { width: 100%; padding: 15px 18px; border: none; border-radius: 14px; background: var(--green); color: #fff; font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.28s var(--ease-butter), background 0.28s var(--ease-butter), box-shadow 0.28s var(--ease-butter); margin-top: 14px; text-decoration: none; box-shadow: 0 8px 24px rgba(26,71,49,0.16); }
+.btn-primary:hover { background: var(--green-mid); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(26,71,49,0.24); }
+.btn-primary svg { width: 15px; height: 15px; stroke: #fff; fill: none; }
+.btn-secondary { width: 100%; padding: 15px 18px; border: 1.5px solid var(--border-md); border-radius: 14px; background: transparent; color: var(--green); font-family: var(--font); font-size: 13.5px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; display: block; margin-top: 14px; transition: background .28s var(--ease-butter), border-color .28s var(--ease-butter), transform .28s var(--ease-butter); }
+.btn-secondary:hover { background: rgba(26,71,49,0.05); border-color: var(--green); transform: translateY(-1px); }
+.microcopy { text-align: center; font-size: 11.5px; color: var(--muted-lt); margin-top: 8px; font-weight: 500; }
+.disclosure { font-size: 12px; color: var(--muted-lt); line-height: 1.6; margin-top: 16px; }
+.small-link { display: block; text-align: center; font-size: 12.5px; color: var(--muted-lt); margin-top: 14px; text-decoration: underline; transition: color .28s var(--ease-butter); }
+.small-link:hover { color: var(--green); }
+.pay-error { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 10px; font-weight: 600; }
+.fade-in { opacity: 0; animation: rrnFade 0.4s var(--ease-butter) forwards; }
+@keyframes rrnFade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+.check-badge { width: 56px; height: 56px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; box-shadow: 0 8px 24px rgba(26,71,49,0.25); }
+.check-badge svg { width: 24px; height: 24px; stroke: #fff; fill: none; }
+.center { text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="bg"><div class="blob blob-1"></div><div class="blob blob-2"></div></div>
+
+<div class="nav">
+  <div class="brand">
+    <div class="brand-icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg></div>
+    RentReady <span style="font-weight:800">Network</span>
+  </div>
+  <div class="steps">RentReady Support</div>
+</div>
+
+<div class="wrap" id="content">
+
+  <div class="card">
+    <div class="eyebrow">RentReady Support</div>
+    <div class="h1">You don't have to figure out every next step <strong>alone.</strong></div>
+    <div class="p">Getting rental-ready can take more than one day. Questions come up. Documents change. Responses arrive. And eventually, it's time to decide where and when to apply.</div>
+    <div class="p" style="margin-top:8px;"><strong>RentReady Support gives you a place to keep moving forward.</strong></div>
+  </div>
+
+  <div class="card">
+    <div class="h2">With RentReady Support</div>
+    <div class="check-points">
+      <div class="check-point"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg><span>Stay organized as you work through your game plan</span></div>
+      <div class="check-point"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg><span>Get guidance when you're unsure about your next step</span></div>
+      <div class="check-point"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg><span>Understand what to do when documents or responses arrive</span></div>
+      <div class="check-point"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg><span>Keep your rental preparation moving</span></div>
+      <div class="check-point"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg><span>Access new renter tools and resources as they're added</span></div>
+      <div class="check-point"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg><span>Join a community focused on getting rental-ready</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h2">Choose How You'd Like To Stay Supported</div>
+    <div class="plans">
+      <div class="plan featured">
+        <div class="plan-badge">Lower Annual Cost</div>
+        <div class="plan-label">Annual</div>
+        <div class="plan-tag">Stay supported for the year</div>
+        <div class="plan-price">$297 <span>/year</span></div>
+        <button class="btn-primary" id="memBtnYearly" onclick="handleMembershipPurchase('yearly')">Join RentReady Support — Yearly <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <div class="microcopy">$297 billed yearly until canceled</div>
+        <div id="memErrorYearly"></div>
+      </div>
+      <div class="plan">
+        <div class="plan-label">Monthly</div>
+        <div class="plan-tag">Stay supported month to month</div>
+        <div class="plan-price">$35 <span>/month</span></div>
+        <button class="btn-primary" id="memBtnMonthly" onclick="handleMembershipPurchase('monthly')" style="background:transparent;color:var(--green);border:1.5px solid var(--border-md);">Join RentReady Support — Monthly <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <div class="microcopy">$35 billed monthly until canceled</div>
+        <div id="memErrorMonthly"></div>
+      </div>
+    </div>
+    <div class="disclosure">Both options are recurring memberships that renew automatically until canceled — $297 charged once per year, or $35 charged once per month. If you stay subscribed monthly for a full year, that totals $420, which is why the annual plan is the lower-cost way to stay supported long-term; the monthly plan simply gives you a smaller, more flexible commitment to start. This charge uses the payment method saved from your pre-screen — you'll always see the price and a clear button before anything is charged. You can cancel either plan at any time from your account or by contacting us, and you'll keep access through the end of the period you already paid for.</div>
+    <a class="small-link" href="#" onclick="continueWithoutMembership(event)">Not right now — continue without this</a>
+  </div>
+
+</div>
+
+<script src="/assets/checkout-client.js"></script>
+<script>
+const ANSWERS_KEY = 'rrn_answers_v1';
+const THANK_YOU_URL = '/thank-you.html';
+const START_URL = '/Renter%20LeadForm.html';
+
+// ── PAYMENT CONFIG ─────────────────────────────────────────────
+// Real Stripe Subscriptions via the Netlify Functions backend (see
+// create-subscription.js) — no card form, uses the payment method saved
+// during the $10 pre-screen. The publishable key is the public half of
+// your Stripe key pair, safe to expose here.
+//
+// If the community itself is hosted on Patreon, you can instead point
+// PATREON_URL at your Patreon page and flip USE_PATREON to true — the
+// buttons will link there instead. Either way, checkout always happens
+// on Stripe's or Patreon's own secure infrastructure; this site never
+// collects or stores card details.
+const STRIPE_PUBLISHABLE_KEY = '';
+const USE_PATREON = false;
+const PATREON_URL = 'PASTE_YOUR_PATREON_URL_HERE';
+// ─────────────────────────────────────────────────────────────
+
+function loadAnswers() {
+  try { return JSON.parse(sessionStorage.getItem(ANSWERS_KEY) || 'null'); }
+  catch (_e) { return null; }
+}
+
+async function handleMembershipPurchase(plan) {
+  if (USE_PATREON) {
+    if (!PATREON_URL || PATREON_URL.includes('PASTE_YOUR')) {
+      alert('Add your Patreon URL to the PATREON_URL constant near the top of membership.html.');
+      return;
+    }
+    window.location.href = PATREON_URL;
+    return;
+  }
+
+  const btnId = plan === 'yearly' ? 'memBtnYearly' : 'memBtnMonthly';
+  const errId = plan === 'yearly' ? 'memErrorYearly' : 'memErrorMonthly';
+  const btn = document.getElementById(btnId);
+  const errBox = document.getElementById(errId);
+  if (btn.dataset.busy === '1') return; // guard against double-click / duplicate charge
+  btn.dataset.busy = '1';
+  btn.disabled = true;
+  errBox.innerHTML = '';
+  const originalLabel = btn.innerHTML;
+  btn.innerHTML = 'Processing…';
+
+  const stripeKey = await rrnGetStripePublishableKey(STRIPE_PUBLISHABLE_KEY);
+  const status = await rrnCreateSubscription(plan, stripeKey);
+
+  if (status === 'succeeded') {
+    renderJoined();
+    return;
+  }
+
+  btn.disabled = false;
+  btn.dataset.busy = '0';
+  btn.innerHTML = originalLabel;
+  errBox.innerHTML = `
+    <div class="pay-error">We couldn't complete this purchase with your saved payment method.</div>
+    <a class="small-link fade-in" href="#" onclick="continueWithoutMembership(event)">Continue Without This →</a>
+  `;
+}
+
+function renderJoined() {
+  document.getElementById('content').innerHTML = `
+    <div class="card center">
+      <div class="check-badge"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
+      <div class="eyebrow">Membership Active</div>
+      <div class="h1">You're <strong>in.</strong></div>
+      <div class="p">Your RentReady Support access information is on its way to your email.</div>
+    </div>
+  `;
+  setTimeout(() => { window.location.href = THANK_YOU_URL; }, 1600);
+}
+
+function continueWithoutMembership(evt) {
+  if (evt) evt.preventDefault();
+  window.location.href = THANK_YOU_URL;
+}
+
+(async function boot() {
+  const answers = loadAnswers();
+  const leadId = answers && answers.lead_id;
+  if (!leadId) {
+    window.location.replace(START_URL);
+    return;
+  }
+  const ent = await rrnFetchEntitlements(leadId);
+  if (!ent || !ent.paid10) {
+    window.location.replace(START_URL);
+    return;
+  }
+  if (ent && ent.membershipStatus === 'active') {
+    renderJoined();
+  }
+})();
+</script>
+</body>
+</html>
