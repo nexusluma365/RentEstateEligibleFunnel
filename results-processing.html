@@ -51,8 +51,7 @@ html, body { min-height: 100%; font-family: var(--font); background: var(--off-w
 .title { font-size: 26px; font-weight: 300; letter-spacing: -0.8px; line-height: 1.2; color: var(--green); margin-bottom: 10px; }
 .title strong { font-weight: 600; }
 .subtitle { font-size: 14.5px; font-weight: 400; color: var(--muted); line-height: 1.6; margin-bottom: 30px; }
-.checklist { display: none; flex-direction: column; gap: 12px; text-align: left; margin-bottom: 8px; }
-.checklist.show { display: flex; }
+.checklist { display: flex; flex-direction: column; gap: 12px; text-align: left; margin-bottom: 8px; }
 .check-row { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 14px; border: 1.5px solid var(--border); background: rgba(255,255,255,0.6); opacity: 0.35; transform: translateX(-6px); transition: opacity 0.52s var(--ease-out), transform 0.52s var(--ease-out), border-color 0.52s var(--ease-out), background 0.52s var(--ease-out); }
 .check-row.done { opacity: 1; transform: translateX(0); border-color: rgba(26,71,49,0.22); background: rgba(52,164,108,0.07); }
 .check-row .dot { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--border-md); display: flex; align-items: center; justify-content: center; transition: background 0.32s var(--ease-out), border-color 0.32s var(--ease-out), transform 0.32s var(--ease-out); }
@@ -60,24 +59,9 @@ html, body { min-height: 100%; font-family: var(--font); background: var(--off-w
 .check-row.done .dot svg { width: 11px; height: 11px; stroke: #fff; fill: none; }
 .check-row .lbl { font-size: 13.5px; font-weight: 500; color: var(--muted); }
 .check-row.done .lbl { color: var(--green); }
-.progress-track { display: none; height: 4px; background: rgba(26,71,49,0.08); border-radius: 4px; margin-top: 28px; overflow: hidden; }
-.progress-track.show { display: block; }
+.progress-track { height: 4px; background: rgba(26,71,49,0.08); border-radius: 4px; margin-top: 28px; overflow: hidden; }
 .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--green), var(--green-accent)); transition: width 0.5s var(--ease-butter); border-radius: 4px; }
 .status-line { margin-top: 16px; font-size: 12.5px; color: var(--muted-lt); font-weight: 500; }
-.checkout-panel { margin-top: 26px; text-align: left; }
-.checkout-panel.show { display: block; }
-.checkout-panel.hide { display: none; }
-.checkout-label { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); margin-bottom: 12px; }
-.checkout-box { padding: 18px; border: 1.5px solid var(--border-md); border-radius: 16px; background: rgba(255,255,255,0.72); }
-.pay-btn {
-  width: 100%; margin-top: 16px; border: 0; border-radius: 14px; padding: 15px 18px;
-  background: var(--green); color: #fff; font: 800 15px var(--font); cursor: pointer;
-  box-shadow: 0 10px 26px rgba(26,71,49,0.22);
-}
-.pay-btn:disabled { cursor: not-allowed; opacity: 0.72; }
-.pay-error { display: none; margin-top: 12px; color: #A63B32; font-size: 13px; line-height: 1.45; text-align: center; }
-.pay-error.show { display: block; }
-.fine { margin-top: 12px; font-size: 11px; line-height: 1.45; color: var(--muted); text-align: center; }
 </style>
 </head>
 <body>
@@ -94,33 +78,22 @@ html, body { min-height: 100%; font-family: var(--font); background: var(--off-w
       RentReady <strong>Network</strong>
     </div>
 
-    <div class="check-badge"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M17 8H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-    <div class="eyebrow" id="eyebrow">Secure Checkout</div>
-    <div class="title" id="titleText">Complete your <strong>$10 pre-screen.</strong></div>
-    <div class="subtitle" id="subtitle">Enter your payment details to unlock your personalized RentReady results. Your card is handled securely by Stripe.</div>
+    <div class="check-badge"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
+    <div class="eyebrow">Pre-Screen Complete</div>
+    <div class="title">Reviewing your <strong>answers...</strong></div>
+    <div class="subtitle" id="subtitle">We're preparing your personalized RentReady summary based on what you shared.</div>
 
     <div class="checklist" id="checklist"></div>
 
-    <div class="progress-track" id="progressTrack"><div class="progress-fill" id="progFill"></div></div>
-    <div class="status-line" id="statusLine">Loading secure checkout...</div>
-    <div class="checkout-panel show" id="checkoutPanel">
-      <div class="checkout-label">Secure pre-screen payment</div>
-      <div class="checkout-box" id="paymentElement"></div>
-      <button class="pay-btn" id="payBtn" type="button">Pay $10 &amp; View Results</button>
-      <div class="pay-error" id="payError"></div>
-      <p class="fine">One-time $10 pre-screen. Your card is handled securely by Stripe and saved only for any one-click upsell you choose later.</p>
-    </div>
+    <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+    <div class="status-line" id="statusLine">Starting...</div>
   </div>
 </div>
 
-<script src="https://js.stripe.com/v3/"></script>
 <script>
 const ANSWERS_STORAGE_KEY = 'rrn_answers_v1';
 const RESULTS_URL = '/After%20Payment%20Results.html';
 const FLOW_ACCESS_KEY = 'rrn_flow_access_v1';
-let stripe = null;
-let elements = null;
-let paymentIntentId = '';
 
 function loadAnswers() {
   try { return JSON.parse(sessionStorage.getItem(ANSWERS_STORAGE_KEY) || 'null'); }
@@ -151,148 +124,30 @@ steps.forEach((label, i) => {
 });
 
 const progFill = document.getElementById('progFill');
-const progressTrack = document.getElementById('progressTrack');
 const statusLine = document.getElementById('statusLine');
-const checkoutPanel = document.getElementById('checkoutPanel');
-const payBtn = document.getElementById('payBtn');
-const payError = document.getElementById('payError');
-const eyebrow = document.getElementById('eyebrow');
-const titleText = document.getElementById('titleText');
-const subtitle = document.getElementById('subtitle');
 const total = steps.length;
 
-function showPaymentError(message) {
-  payError.textContent = message || 'We could not start checkout. Please refresh and try again.';
-  payError.classList.add('show');
-}
-
-function grantResultsAccess() {
-  try {
-    sessionStorage.setItem(FLOW_ACCESS_KEY, JSON.stringify({
-      step: 'prescreen-results',
-      status: 'confirmed',
-      at: Date.now(),
-    }));
-  } catch (_e) {}
-}
-
-async function fetchJson(url, options) {
-  const res = await fetch(url, options);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data || data.ok === false) {
-    throw new Error((data && data.error) || 'Request failed.');
-  }
-  return data;
-}
-
-async function alreadyPaid() {
-  if (!answers || !answers.lead_id) return false;
-  try {
-    const data = await fetchJson('/.netlify/functions/get-entitlements?leadId=' + encodeURIComponent(answers.lead_id));
-    return !!data.paid10;
-  } catch (_e) {
-    return false;
-  }
-}
-
-async function initCheckout() {
-  if (!answers || !answers.lead_id) {
-    window.location.replace('/Renter%20LeadForm.html');
-    return;
-  }
-
-  if (await alreadyPaid()) {
-    grantResultsAccess();
-    startProcessing();
-    return;
-  }
-
-  statusLine.textContent = 'Secure checkout ready.';
-
-  try {
-    const config = await fetchJson('/.netlify/functions/config');
-    const intent = await fetchJson('/.netlify/functions/create-payment-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        leadId: answers.lead_id,
-        email: answers.email || '',
-        answers: answers,
-      }),
-    });
-
-    paymentIntentId = intent.paymentIntentId;
-    stripe = Stripe(config.stripePublishableKey);
-    elements = stripe.elements({ clientSecret: intent.clientSecret });
-    elements.create('payment').mount('#paymentElement');
-  } catch (err) {
-    payBtn.disabled = true;
-    statusLine.textContent = 'Checkout needs attention.';
-    showPaymentError(err.message);
-  }
-}
-
-async function handlePayment() {
-  if (!stripe || !elements || !paymentIntentId || payBtn.disabled) return;
-  payError.classList.remove('show');
-  payBtn.disabled = true;
-  payBtn.textContent = 'Confirming payment...';
-  statusLine.textContent = 'Confirming your payment...';
-
-  try {
-    const result = await stripe.confirmPayment({ elements, redirect: 'if_required' });
-    if (result.error) throw new Error(result.error.message || 'Payment was not completed.');
-
-    const confirmed = await fetchJson('/.netlify/functions/confirm-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        leadId: answers.lead_id,
-        paymentIntentId: result.paymentIntent ? result.paymentIntent.id : paymentIntentId,
-        product: 'prescreen',
-      }),
-    });
-
-    if (confirmed.status !== 'succeeded') throw new Error('Payment is still processing. Please try again in a moment.');
-    grantResultsAccess();
-    startProcessing();
-  } catch (err) {
-    payBtn.disabled = false;
-    payBtn.textContent = 'Pay $10 & View Results';
-    statusLine.textContent = 'Payment not completed.';
-    showPaymentError(err.message);
-  }
-}
-
-payBtn.addEventListener('click', handlePayment);
-
 let i = 0;
-function startProcessing() {
-  checkoutPanel.classList.add('hide');
-  list.classList.add('show');
-  progressTrack.classList.add('show');
-  eyebrow.textContent = 'Pre-Screen Complete';
-  titleText.innerHTML = 'Reviewing your <strong>answers...</strong>';
-  subtitle.textContent = "We're preparing your personalized RentReady summary based on what you shared.";
-  statusLine.textContent = 'Reviewing your answers...';
-  i = 0;
-  progFill.style.width = '0%';
-  setTimeout(tick, 300);
-}
-
 function tick() {
   if (i >= total) {
-    statusLine.textContent = 'Opening your results...';
+    statusLine.textContent = 'Redirecting to your results...';
+    try {
+      sessionStorage.setItem(FLOW_ACCESS_KEY, JSON.stringify({
+        step: 'prescreen-results',
+        status: 'confirmed',
+        at: Date.now(),
+      }));
+    } catch (_e) {}
     setTimeout(() => { window.location.href = RESULTS_URL; }, 550);
     return;
   }
   document.getElementById('row-' + i).classList.add('done');
   i++;
   progFill.style.width = Math.round((i / total) * 100) + '%';
-  statusLine.textContent = i < total ? 'Reviewing your answers…' : 'Almost ready…';
+  statusLine.textContent = i < total ? 'Reviewing your answers...' : 'Almost ready...';
   setTimeout(tick, 480);
 }
-initCheckout();
+setTimeout(tick, 400);
 </script>
 </body>
 </html>
