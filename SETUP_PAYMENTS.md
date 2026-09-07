@@ -125,8 +125,7 @@ This mirrors the test list from the funnel spec:
 
 **Kept exactly as-is:** the questionnaire (`index.html` /
 `renter-lead-form.html`), all page structure/CSS/typography/cards/buttons
-across every page, the lead-capture half of `code.gs`, and
-`results-processing.html`.
+across every page, and the lead-capture half of `code.gs`.
 
 **Added:**
 - `/netlify/functions/*` — the real backend (Stripe PaymentIntents/
@@ -136,6 +135,9 @@ across every page, the lead-capture half of `code.gs`, and
   purchase/3DS/entitlement calls used by `game-plan.html`,
   apartment upsell pages. Purely behavioral —
   it doesn't style or render anything.
+- `rentready-review-checkout.html` — the dedicated $10 RentReady review checkout
+  shown after the questionnaire analysis loader and before
+  `After Payment Results.html`.
 - Server-guarded access checks and the unlocked result experience on
   `After Payment Results.html`.
 - Real one-click purchase buttons, `requires_action` (3DS) handling, and

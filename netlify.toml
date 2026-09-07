@@ -81,6 +81,11 @@
   status = 200
 
 [[redirects]]
+  from = "/rentready-review-checkout"
+  to = "/rentready-review-checkout.html"
+  status = 200
+
+[[redirects]]
   from = "/after-payment-results"
   to = "/After Payment Results.html"
   status = 200

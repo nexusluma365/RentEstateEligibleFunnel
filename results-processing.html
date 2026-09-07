@@ -92,7 +92,7 @@ html, body { min-height: 100%; font-family: var(--font); background: var(--off-w
 
 <script>
 const ANSWERS_STORAGE_KEY = 'rrn_answers_v1';
-const RESULTS_URL = '/After%20Payment%20Results.html';
+const RESULTS_URL = '/rentready-review-checkout';
 const FLOW_ACCESS_KEY = 'rrn_flow_access_v1';
 
 function loadAnswers() {
@@ -133,7 +133,7 @@ function tick() {
     statusLine.textContent = 'Redirecting to your results...';
     try {
       sessionStorage.setItem(FLOW_ACCESS_KEY, JSON.stringify({
-        step: 'prescreen-results',
+        step: 'prescreen-checkout',
         status: 'confirmed',
         at: Date.now(),
       }));

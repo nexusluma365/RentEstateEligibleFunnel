@@ -61,6 +61,8 @@ Send this Stripe event: `payment_intent.succeeded`.
 
 The public lead form submits through `/.netlify/functions/submit-lead`, so the Google Apps Script URL stays in Netlify env instead of the HTML.
 
+After the questionnaire, `results-processing.html` runs the analysis loader and sends the user to `rentready-review-checkout.html` for the one-time $10 RentReady review checkout. A confirmed Stripe PaymentIntent unlocks `After Payment Results.html`.
+
 Paid pages call Netlify Functions before unlocking protected steps. Direct URL access to payment-confirmed pages is guarded by server-side entitlement checks plus short-lived same-session handoff markers for the active checkout flow.
 
 The luxury and modern apartment upsells both charge through the saved Stripe customer payment method. If the upsell succeeds, the packet email is sent and the user continues to `Real-estate list.html`. If the card is declined, the user still continues to the listings page but no packet email is sent.

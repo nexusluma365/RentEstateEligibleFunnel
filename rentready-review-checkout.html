@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RentReady Network - Secure Checkout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#174b33;--green-2:#1f6a46;--accent:#56b07a;--bg:#f7faf7;--text:#174b33;--muted:#66766c;--line:#dce5df;--soft:#eef6f1;--font:-apple-system,BlinkMacSystemFont,'DM Sans','Helvetica Neue',sans-serif}
+html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
+body{padding:28px}
+.page{min-height:calc(100dvh - 56px);background:#fff;border:1px solid #e4ece7;box-shadow:0 24px 70px rgba(23,75,51,.08);display:flex;flex-direction:column}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:38px 56px}
+.brand,.secure{display:flex;align-items:center;gap:12px;font-weight:800;color:var(--green)}
+.brand-mark{width:38px;height:38px;border-radius:10px;background:var(--green);display:grid;place-items:center;color:#fff}
+.brand-mark svg,.secure svg{width:19px;height:19px;stroke:currentColor;fill:none}
+.secure{font-size:15px;color:var(--muted)}
+.progress{display:flex;align-items:center;justify-content:center;gap:22px;padding:18px 24px 54px;font-weight:800;font-size:22px;color:var(--green)}
+.progress .dot{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--soft);color:var(--accent)}
+.progress .dot.active{background:var(--accent);color:#fff}
+.progress .bar{width:120px;height:5px;border-radius:999px;background:var(--accent)}
+.content{width:min(100%,1320px);margin:0 auto;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(360px,.75fr);gap:64px;padding:0 76px 42px}
+.main{padding-top:12px}
+h1{font-size:clamp(34px,4vw,48px);line-height:1.08;letter-spacing:0;font-weight:800;margin-bottom:26px}
+.lead{font-size:20px;line-height:1.55;color:var(--muted);max-width:790px;margin-bottom:18px}
+.rule{border:0;border-top:1px solid var(--line);margin:40px 0 34px}
+h2{font-size:28px;line-height:1.1;margin-bottom:18px}
+.copy{font-size:17px;line-height:1.55;color:var(--muted);margin-bottom:24px}
+.field-label{display:block;font-size:14px;font-weight:800;color:var(--muted);margin-bottom:10px}
+.payment-box{min-height:200px;border:1.5px solid var(--line);border-radius:8px;padding:18px;background:#fff}
+.next-step{margin-top:34px}
+.cta{width:min(100%,480px);height:62px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:18px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 10px 24px rgba(86,176,122,.2)}
+.cta:disabled{opacity:.7;cursor:not-allowed;box-shadow:none}
+.error{display:none;color:#a63b32;font-size:14px;line-height:1.45;margin-top:14px}
+.error.show{display:block}
+.summary{border:1px solid var(--line);border-radius:8px;align-self:start;overflow:hidden;background:#fff;box-shadow:0 14px 36px rgba(23,75,51,.06)}
+.summary-head{background:var(--green);color:#fff;padding:34px 30px}
+.summary-head p{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;opacity:.72;margin-bottom:14px}
+.summary-head h2{font-size:30px;color:#fff;margin:0;line-height:1.05}
+.summary-body{padding:30px}
+.line-item{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding-bottom:24px;border-bottom:1px solid var(--line)}
+.line-item strong{display:block;font-size:18px;margin-bottom:4px}
+.line-item span{color:var(--muted);font-size:15px}
+.price{font-size:36px;font-weight:900;color:var(--green)}
+.benefits{display:grid;gap:24px;padding:28px 0;border-bottom:1px solid var(--line)}
+.benefit{display:grid;grid-template-columns:24px 1fr;gap:14px;color:var(--muted);font-size:17px;line-height:1.45}
+.benefit b{color:var(--accent)}
+.plus{padding:26px 0;color:var(--muted);font-size:16px;line-height:1.45}
+.mini-table{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.mini-row{display:flex;justify-content:space-between;gap:18px;padding:14px 16px;border-bottom:1px solid var(--line);font-size:14px;color:var(--muted)}
+.mini-row:last-child{border-bottom:0}
+.mini-row strong{color:var(--green)}
+.disclaimer{font-size:12px;line-height:1.5;color:#9aaa9f;margin-top:26px}
+@media(max-width:960px){body{padding:0}.page{min-height:100dvh;border:0}.nav{padding:24px 20px}.secure span{display:none}.progress{gap:10px;font-size:16px;padding-bottom:32px}.progress .bar{width:42px}.progress .dot{width:38px;height:38px}.content{grid-template-columns:1fr;padding:0 20px 34px;gap:34px}h1{font-size:34px}.lead{font-size:17px}.summary{order:-1}.cta{width:100%}}
+</style>
+</head>
+<body>
+<div class="page">
+  <nav class="nav">
+    <div class="brand">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9v-6h6v6h2.5a1 1 0 0 0 1-1v-9"/></svg></span>
+      <span>RentReady&nbsp; Network</span>
+    </div>
+    <div class="secure"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 22s7-3.5 7-10V5l-7-3-7 3v7c0 6.5 7 10 7 10Z"/></svg><span>Secure eligibility checkout</span></div>
+  </nav>
+
+  <div class="progress" aria-label="Checkout progress">
+    <span class="dot">✓</span><span>Questionnaire</span><span class="bar"></span>
+    <span class="dot">✓</span><span>Housing Plan</span><span class="bar"></span>
+    <span class="dot active">3</span><span>Checkout</span>
+  </div>
+
+  <main class="content">
+    <section class="main">
+      <h1><span id="firstName">Your</span>, your RentReady review is ready.</h1>
+      <p class="lead">See what may be increasing your upfront rental cost - and what to prepare before you apply.</p>
+      <p class="lead">We'll also show whether your profile may fit lower-upfront or no-money-down leasing opportunities.</p>
+      <hr class="rule">
+
+      <h2>Payment details</h2>
+      <p class="copy">Your questionnaire is complete. Enter your payment details to unlock your personalized review.</p>
+      <label class="field-label">Credit card details</label>
+      <div class="payment-box" id="paymentElement"></div>
+      <p class="error" id="paymentError"></p>
+
+      <div class="next-step">
+        <h2>Your next step</h2>
+        <p class="copy">Before you start paying application fees, see what your current rental profile may be telling property managers and what you can prepare next.</p>
+        <button class="cta" id="payBtn" type="button" disabled>Unlock My RentReady Review - $10 <span>→</span></button>
+      </div>
+    </section>
+
+    <aside class="summary">
+      <div class="summary-head">
+        <p>RentReady Review</p>
+        <h2>Your Rental Readiness Outlook</h2>
+      </div>
+      <div class="summary-body">
+        <div class="line-item">
+          <div><strong>RentReady Outlook</strong><span>One-time personalized review</span></div>
+          <div class="price">$10</div>
+        </div>
+        <div class="benefits">
+          <div class="benefit"><b>✓</b><span>See what may be increasing your upfront rental cost.</span></div>
+          <div class="benefit"><b>✓</b><span>Review the income, credit, rental history, budget and move-timing signals from your answers.</span></div>
+          <div class="benefit"><b>✓</b><span>See what to prepare before paying application fees.</span></div>
+        </div>
+        <p class="plus">Plus: See whether your profile may fit lower-upfront or no-money-down leasing opportunities.</p>
+        <div class="mini-table">
+          <div class="mini-row"><span>Applicant</span><strong id="summaryName">Applicant</strong></div>
+          <div class="mini-row"><span>City</span><strong id="summaryCity">Not provided</strong></div>
+          <div class="mini-row"><span>Move timing</span><strong id="summaryMove">Not provided</strong></div>
+          <div class="mini-row"><span>Credit review</span><strong id="summaryCredit">Review</strong></div>
+        </div>
+        <p class="disclaimer">RentReady provides educational rental-readiness guidance based on the information you supplied. This is not a rental application, tenant-screening decision, landlord approval, or guarantee of approval, deposit terms, or no-deposit eligibility. Actual requirements vary by property.</p>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+(function(){
+  var ANSWERS_STORAGE_KEY = 'rrn_answers_v1';
+  var FLOW_ACCESS_KEY = 'rrn_flow_access_v1';
+  var RESULTS_URL = '/After%20Payment%20Results.html';
+  var START_URL = '/Renter%20LeadForm.html';
+  var stripe = null;
+  var elements = null;
+  var paymentIntentId = '';
+
+  function readAnswers(){
+    try { return JSON.parse(sessionStorage.getItem(ANSWERS_STORAGE_KEY) || localStorage.getItem(ANSWERS_STORAGE_KEY) || '{}') || {}; }
+    catch (_e) { return {}; }
+  }
+
+  function label(value, map){
+    return map[value] || String(value || '').replace(/_/g, ' ') || 'Not provided';
+  }
+
+  function showError(message){
+    var el = document.getElementById('paymentError');
+    el.textContent = message || 'Could not start checkout.';
+    el.classList.add('show');
+  }
+
+  async function fetchJson(url, options){
+    var res = await fetch(url, options);
+    var data = await res.json().catch(function(){ return {}; });
+    if (!res.ok || !data || data.ok === false) throw new Error((data && data.error) || 'Request failed.');
+    return data;
+  }
+
+  function grantResultsAccess(){
+    try {
+      sessionStorage.setItem(FLOW_ACCESS_KEY, JSON.stringify({
+        step: 'prescreen-results',
+        status: 'confirmed',
+        at: Date.now(),
+      }));
+    } catch (_e) {}
+  }
+
+  function hydrateSummary(answers){
+    var first = answers.first_name || 'Your';
+    var full = [answers.first_name, answers.last_name].filter(Boolean).join(' ') || 'Applicant';
+    document.getElementById('firstName').textContent = first;
+    document.getElementById('summaryName').textContent = full;
+    document.getElementById('summaryCity').textContent = answers.preferred_city || 'Not provided';
+    document.getElementById('summaryMove').textContent = label(answers.move_timeline, {
+      immediately: 'Immediately',
+      under_30: 'Under 30 days',
+      '30_60_days': '30-60 days',
+      '60_plus': '60+ days',
+      flexible: 'Flexible',
+      one_to_three_months: 'in 1-3 months',
+    });
+    document.getElementById('summaryCredit').textContent = label(answers.credit_score, {
+      under_580: 'Review',
+      '580_619': 'Review',
+      '620_659': 'Review',
+      '660_699': 'Positive',
+      '700_739': 'Strong',
+      '740_799': 'Strong',
+      '800_plus': 'Strong',
+    });
+  }
+
+  async function init(){
+    var answers = readAnswers();
+    var btn = document.getElementById('payBtn');
+    if (!answers.lead_id) {
+      window.location.replace(START_URL);
+      return;
+    }
+    hydrateSummary(answers);
+
+    try {
+      var ent = await fetchJson('/.netlify/functions/get-entitlements?leadId=' + encodeURIComponent(answers.lead_id));
+      if (ent && ent.paid10) {
+        grantResultsAccess();
+        window.location.href = RESULTS_URL;
+        return;
+      }
+
+      var config = await fetchJson('/.netlify/functions/config');
+      var intent = await fetchJson('/.netlify/functions/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: answers.lead_id, email: answers.email || '', answers: answers }),
+      });
+
+      paymentIntentId = intent.paymentIntentId;
+      stripe = Stripe(config.stripePublishableKey);
+      elements = stripe.elements({ clientSecret: intent.clientSecret });
+      elements.create('payment').mount('#paymentElement');
+      btn.disabled = false;
+    } catch (err) {
+      btn.disabled = true;
+      showError(err.message);
+    }
+  }
+
+  async function pay(){
+    var answers = readAnswers();
+    var btn = document.getElementById('payBtn');
+    var err = document.getElementById('paymentError');
+    if (!stripe || !elements || !paymentIntentId || !answers.lead_id || btn.disabled) return;
+    err.classList.remove('show');
+    btn.disabled = true;
+    btn.textContent = 'Confirming payment...';
+
+    try {
+      var result = await stripe.confirmPayment({ elements: elements, redirect: 'if_required' });
+      if (result.error) throw new Error(result.error.message || 'Payment was not completed.');
+      var confirmed = await fetchJson('/.netlify/functions/confirm-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: answers.lead_id,
+          paymentIntentId: result.paymentIntent ? result.paymentIntent.id : paymentIntentId,
+          product: 'prescreen',
+        }),
+      });
+      if (confirmed.status !== 'succeeded') throw new Error('Payment is still processing. Please try again in a moment.');
+      grantResultsAccess();
+      window.location.href = RESULTS_URL;
+    } catch (error) {
+      btn.disabled = false;
+      btn.innerHTML = 'Unlock My RentReady Review - $10 <span>→</span>';
+      showError(error.message);
+    }
+  }
+
+  document.getElementById('payBtn').addEventListener('click', pay);
+  init();
+})();
+</script>
+</body>
+</html>
