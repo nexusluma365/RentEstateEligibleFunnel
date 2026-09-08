@@ -137,14 +137,14 @@ across every page, and the lead-capture half of `code.gs`.
   it doesn't style or render anything.
 - `rentready-review-checkout.html` — the dedicated $10 RentReady review checkout
   shown after the questionnaire analysis loader and before
-  `After Payment Results.html`.
+  `after-payment-results/index.html`.
 - Server-guarded access checks and the unlocked result experience on
-  `After Payment Results.html`.
+  `after-payment-results/index.html`.
 - Real one-click purchase buttons, `requires_action` (3DS) handling, and
   the "we couldn't complete this purchase" → fade-in "Continue Without
   This →" pattern on the apartment upsell pages.
-- `Luxury Apartment Upsell.html` and `Modern Apartment Upsell.html` — saved-card
-  $27 apartment upsells that redirect to `Real-estate list.html` after payment
+- `luxury-apartments-premium.html` and `modern-apartments-premium.html` — saved-card
+  $27 apartment upsells that redirect to `real-estate-list.html` after payment
   succeeds or after the decline notice is shown.
 - `/netlify/functions/get-apartment-results.js` — fetches factual property
   data from Google Places and optionally uses OpenAI server-side for ranking

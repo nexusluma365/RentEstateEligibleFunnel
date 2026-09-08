@@ -189,7 +189,7 @@ async function run() {
     'prescreen-results',
     'Successful payment should grant results access'
   );
-  assert.equal(context.window.location.href, '/After%20Payment%20Results.html');
+  assert.equal(context.window.location.href, '/after-payment-results/');
 }
 
 run()

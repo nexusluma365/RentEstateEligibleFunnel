@@ -77,7 +77,7 @@ html, body { min-height: 100%; font-family: var(--font); background: var(--off-w
 <script src="/assets/checkout-client.js"></script>
 <script>
 const ANSWERS_KEY = 'rrn_answers_v1';
-const START_URL = '/Renter%20LeadForm.html';
+const START_URL = '/index.html';
 
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
@@ -113,7 +113,7 @@ function render(answers, ent) {
   if (ent && ent.paid97) {
     links.push(`<a class="btn-secondary" href="/.netlify/functions/download-file?leadId=${encodeURIComponent(answers.lead_id)}&product=creditkit">Download My Credit Action Kit</a>`);
   }
-  links.push(`<a class="btn-primary" href="/After%20Payment%20Results.html">Back To My RentReady Results ${svgArrow()}</a>`);
+  links.push(`<a class="btn-primary" href="/after-payment-results/">Back To My RentReady Results ${svgArrow()}</a>`);
 
   document.getElementById('content').innerHTML = `
     <div class="brand">

@@ -47,37 +47,37 @@
 
 [[redirects]]
   from = "/"
-  to = "/Renter LeadForm.html"
+  to = "/index.html"
   status = 200
 
 [[redirects]]
-  from = "/index.html"
-  to = "/Renter LeadForm.html"
-  status = 301
-
-[[redirects]]
   from = "/renter-lead-form.html"
-  to = "/Renter LeadForm.html"
+  to = "/index.html"
   status = 200
 
 [[redirects]]
   from = "/renter-lead-form"
-  to = "/Renter LeadForm.html"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/Renter LeadForm.html"
+  to = "/index.html"
   status = 200
 
 [[redirects]]
   from = "/rent-ready-network"
-  to = "/After Payment Results.html"
+  to = "/after-payment-results/index.html"
   status = 200
 
 [[redirects]]
   from = "/rent-ready-network.html"
-  to = "/After Payment Results.html"
+  to = "/after-payment-results/index.html"
   status = 301
 
 [[redirects]]
   from = "/results"
-  to = "/After Payment Results.html"
+  to = "/after-payment-results/index.html"
   status = 200
 
 [[redirects]]
@@ -87,7 +87,12 @@
 
 [[redirects]]
   from = "/after-payment-results"
-  to = "/After Payment Results.html"
+  to = "/after-payment-results/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/After Payment Results.html"
+  to = "/after-payment-results/index.html"
   status = 200
 
 [[redirects]]
@@ -97,50 +102,50 @@
 
 [[redirects]]
   from = "/real-estate-list"
-  to = "/Real-estate list.html"
+  to = "/real-estate-list.html"
   status = 200
 
 [[redirects]]
-  from = "/real-estate-list.html"
-  to = "/Real-estate list.html"
+  from = "/Real-estate list.html"
+  to = "/real-estate-list.html"
   status = 200
 
 [[redirects]]
   from = "/modern-apartment-premium"
-  to = "/Modern Apartment Upsell.html"
+  to = "/modern-apartments-premium.html"
   status = 200
 
 [[redirects]]
   from = "/modern-apartment-premium.html"
-  to = "/Modern Apartment Upsell.html"
+  to = "/modern-apartments-premium.html"
   status = 200
 
 [[redirects]]
   from = "/modern-apartments-premium"
-  to = "/Modern Apartment Upsell.html"
+  to = "/modern-apartments-premium.html"
   status = 200
 
 [[redirects]]
-  from = "/modern-apartments-premium.html"
-  to = "/Modern Apartment Upsell.html"
+  from = "/Modern Apartment Upsell.html"
+  to = "/modern-apartments-premium.html"
   status = 200
 
 [[redirects]]
   from = "/luxury-apartment-premium"
-  to = "/Luxury Apartment Upsell.html"
+  to = "/luxury-apartments-premium.html"
   status = 200
 
 [[redirects]]
   from = "/luxury-apartment-premium.html"
-  to = "/Luxury Apartment Upsell.html"
+  to = "/luxury-apartments-premium.html"
   status = 200
 
 [[redirects]]
   from = "/luxury-apartments-premium"
-  to = "/Luxury Apartment Upsell.html"
+  to = "/luxury-apartments-premium.html"
   status = 200
 
 [[redirects]]
-  from = "/luxury-apartments-premium.html"
-  to = "/Luxury Apartment Upsell.html"
+  from = "/Luxury Apartment Upsell.html"
+  to = "/luxury-apartments-premium.html"
   status = 200
