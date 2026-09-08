@@ -12,6 +12,7 @@ const FALLBACK_IMAGES = {
   modern: '/real estate images/charlotte/charlotte.webp',
   luxury: '/real estate images/charlotte/charlotte 1.webp',
 };
+const MAX_RESULTS = 8;
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') {
@@ -45,10 +46,12 @@ exports.handler = async (event) => {
     const lead = await getLead(leadId);
     if (!lead) return json(404, { ok: false, error: 'No saved questionnaire was found.' });
 
-    const rawProperties = await fetchGooglePlaces(lead, category);
+    const criteria = buildCriteria(lead, category);
+    const rawProperties = await fetchGooglePlaces(criteria);
     if (!rawProperties.length) {
       const empty = {
         provider: process.env.GOOGLE_PLACES_API_KEY ? 'google_places' : 'not_configured',
+        criteria,
         message: process.env.GOOGLE_PLACES_API_KEY
           ? 'No verified apartment communities were returned for this search. Try a broader city or contact RentReady support.'
           : 'Google Places is not configured yet, so RentReady cannot generate verified apartment recommendations.',
@@ -58,8 +61,8 @@ exports.handler = async (event) => {
       return json(200, { ok: true, leadId, category, generatedAt: new Date().toISOString(), ...empty });
     }
 
-    const properties = await rankWithOpenAI(rawProperties, lead, category);
-    const result = { provider: 'google_places', message: null, properties };
+    const properties = await rankWithOpenAI(rawProperties, criteria);
+    const result = { provider: 'google_places', message: null, criteria, properties };
     await saveApartmentResults(leadId, category, result);
     return json(200, { ok: true, leadId, category, generatedAt: new Date().toISOString(), ...result });
   } catch (err) {
@@ -68,36 +71,69 @@ exports.handler = async (event) => {
   }
 };
 
-async function fetchGooglePlaces(lead, category) {
+async function fetchGooglePlaces(criteria) {
   const key = process.env.GOOGLE_PLACES_API_KEY;
   if (!key) return [];
 
-  const city = clean(lead.preferred_city) || 'United States';
-  const query = `${category === 'luxury' ? 'luxury apartments' : 'modern apartments'} in ${city}`;
+  const budgetText = criteria.rentBudget ? ` around $${criteria.rentBudget} per month` : '';
+  const bedroomText = criteria.bedroomsLabel ? ` ${criteria.bedroomsLabel}` : '';
+  const query = `${criteria.category === 'luxury' ? 'luxury' : 'modern'}${bedroomText} apartments${budgetText} in ${criteria.city}`;
   const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
   url.searchParams.set('query', query);
-  url.searchParams.set('type', 'real_estate_agency');
   url.searchParams.set('key', key);
 
   const resp = await fetch(url);
   const data = await resp.json().catch(() => ({}));
-  const results = Array.isArray(data.results) ? data.results.slice(0, 8) : [];
+  const results = Array.isArray(data.results) ? data.results.slice(0, MAX_RESULTS) : [];
+  const details = await Promise.all(results.map((p) => fetchPlaceDetails(p.place_id, key)));
 
-  return results.map((p) => ({
-    propertyId: p.place_id || '',
-    name: p.name || '',
-    address: p.formatted_address || '',
-    phone: '',
-    website: '',
-    image: photoUrl(p.photos && p.photos[0] && p.photos[0].photo_reference, key) || FALLBACK_IMAGES[category],
-    rating: typeof p.rating === 'number' ? p.rating : null,
-    directions: p.place_id ? `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(p.place_id)}` : '',
-    category,
-    matchScore: 0,
-    matchReasons: [],
-    summary: '',
+  return results.map((p, index) => normalizePlace(p, details[index], criteria, key)).filter((p) => p.propertyId && p.name);
+}
+
+async function fetchPlaceDetails(placeId, key) {
+  if (!placeId) return null;
+  const url = new URL('https://maps.googleapis.com/maps/api/place/details/json');
+  url.searchParams.set('place_id', placeId);
+  url.searchParams.set('fields', 'name,formatted_address,formatted_phone_number,international_phone_number,website,url,rating,user_ratings_total,photo,types,business_status');
+  url.searchParams.set('key', key);
+
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json().catch(() => ({}));
+    return data && data.result ? data.result : null;
+  } catch (err) {
+    console.warn('place details lookup failed', err.message || err);
+    return null;
+  }
+}
+
+function normalizePlace(place, details, criteria, key) {
+  const source = details || {};
+  const photoRef =
+    (source.photos && source.photos[0] && source.photos[0].photo_reference) ||
+    (place.photos && place.photos[0] && place.photos[0].photo_reference);
+  const property = {
+    propertyId: place.place_id || '',
+    name: source.name || place.name || '',
+    address: source.formatted_address || place.formatted_address || '',
+    phone: source.formatted_phone_number || source.international_phone_number || '',
+    website: source.website || '',
+    image: photoUrl(photoRef, key) || FALLBACK_IMAGES[criteria.category],
+    rating: typeof source.rating === 'number' ? source.rating : typeof place.rating === 'number' ? place.rating : null,
+    reviewCount:
+      typeof source.user_ratings_total === 'number'
+        ? source.user_ratings_total
+        : typeof place.user_ratings_total === 'number'
+        ? place.user_ratings_total
+        : null,
+    directions:
+      source.url ||
+      (place.place_id ? `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(place.place_id)}` : ''),
+    category: criteria.category,
+    businessStatus: source.business_status || place.business_status || '',
     source: 'Google Places',
-  })).filter((p) => p.propertyId && p.name);
+  };
+  return { ...property, ...scoreProperty(property, criteria) };
 }
 
 function photoUrl(ref, key) {
@@ -109,9 +145,9 @@ function photoUrl(ref, key) {
   return url.toString();
 }
 
-async function rankWithOpenAI(properties, lead, category) {
+async function rankWithOpenAI(properties, criteria) {
   const key = process.env.OPENAI_API_KEY;
-  if (!key) return defaultRank(properties, lead, category);
+  if (!key) return defaultRank(properties, criteria);
 
   try {
     const resp = await fetch('https://api.openai.com/v1/responses', {
@@ -127,15 +163,17 @@ async function rankWithOpenAI(properties, lead, category) {
           {
             role: 'user',
             content: JSON.stringify({
-              category,
-              preferences: {
-                city: lead.preferred_city || '',
-                rentBudget: lead.rent_budget || '',
-                moveTimeline: lead.move_timeline || '',
-                bedrooms: lead.beds_needed || '',
-                moveReason: lead.move_reason || '',
-              },
-              properties: properties.map(({ propertyId, name, address, rating }) => ({ propertyId, name, address, rating })),
+              category: criteria.category,
+              preferences: criteria,
+              properties: properties.map(({ propertyId, name, address, rating, reviewCount, phone, website }) => ({
+                propertyId,
+                name,
+                address,
+                rating,
+                reviewCount,
+                hasPhone: !!phone,
+                hasWebsite: !!website,
+              })),
             }),
           },
         ],
@@ -173,26 +211,91 @@ async function rankWithOpenAI(properties, lead, category) {
     const text = data.output_text || (((data.output || [])[0] || {}).content || [])[0]?.text;
     const parsed = text ? JSON.parse(text) : null;
     const byId = new Map((parsed && parsed.properties ? parsed.properties : []).map((p) => [p.propertyId, p]));
-    return defaultRank(properties, lead, category)
+    return defaultRank(properties, criteria)
       .map((p) => enrich(p, byId.get(p.propertyId)))
       .sort((a, b) => b.matchScore - a.matchScore);
   } catch (err) {
     console.error('OpenAI ranking fallback', err.message || err);
-    return defaultRank(properties, lead, category);
+    return defaultRank(properties, criteria);
   }
 }
 
-function defaultRank(properties, lead, category) {
-  return properties.map((p, index) => ({
-    ...p,
-    matchScore: Math.max(70, 94 - index * 4),
-    matchReasons: [
-      `Located around ${clean(lead.preferred_city) || 'your selected area'}`,
-      category === 'luxury' ? 'Matches your luxury apartment selection' : 'Matches your modern apartment selection',
-      'Verified through Google Places',
-    ],
-    summary: 'This verified apartment community may be worth contacting to confirm current rent, availability, deposits, lease terms, and screening requirements.',
-  }));
+function defaultRank(properties, criteria) {
+  return properties
+    .map((p) => (p.matchReasons && p.matchReasons.length && p.summary ? p : { ...p, ...scoreProperty(p, criteria) }))
+    .sort((a, b) => b.matchScore - a.matchScore);
+}
+
+function buildCriteria(lead, category) {
+  const city = clean(lead.preferred_city || lead.city) || 'United States';
+  const rentBudget = Number(lead.rent_budget) || null;
+  const bedrooms = normalizeBedrooms(lead.beds_needed);
+  return {
+    category,
+    city,
+    rentBudget,
+    bedrooms,
+    bedroomsLabel: bedroomLabel(bedrooms),
+    moveTimeline: clean(lead.move_timeline),
+    moveReason: clean(lead.move_reason),
+  };
+}
+
+function normalizeBedrooms(value) {
+  const raw = String(value || '').split(',')[0].trim().toLowerCase();
+  if (!raw) return null;
+  if (raw === 'studio') return 0;
+  if (raw.includes('4')) return 4;
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.max(0, Math.min(4, n)) : null;
+}
+
+function bedroomLabel(bedrooms) {
+  if (bedrooms === null || bedrooms === undefined) return '';
+  if (bedrooms === 0) return 'studio';
+  if (bedrooms >= 4) return '4 bedroom';
+  return `${bedrooms} bedroom`;
+}
+
+function scoreProperty(property, criteria) {
+  let score = 58;
+  const text = `${property.name} ${property.address}`.toLowerCase();
+  const cityTerms = clean(criteria.city)
+    .toLowerCase()
+    .split(/[,\s]+/)
+    .filter((term) => term.length > 2);
+  const cityHits = cityTerms.filter((term) => text.includes(term)).length;
+  if (cityTerms.length && cityHits) score += Math.min(18, cityHits * 7);
+
+  if (criteria.category === 'luxury') {
+    if (/\bluxury|residences|reserve|retreat|lofts|collection|villas|heights|park|pointe/.test(text)) score += 13;
+  } else if (/\bmodern|lofts|flats|studio|urban|new|contemporary|station|square/.test(text)) {
+    score += 13;
+  }
+
+  if (typeof property.rating === 'number') score += Math.max(0, Math.min(12, Math.round((property.rating - 3.4) * 8)));
+  if (property.phone) score += 4;
+  if (property.website) score += 4;
+  if (property.businessStatus === 'OPERATIONAL') score += 3;
+  if (criteria.rentBudget && criteria.rentBudget < 1800) score += text.includes('luxury') ? 1 : 4;
+  score = Math.max(55, Math.min(98, Math.round(score)));
+
+  const matchReasons = [
+    `Searched for ${criteria.category} apartments in ${criteria.city}`,
+    criteria.rentBudget
+      ? `Matched against your target budget around $${criteria.rentBudget}/mo`
+      : 'Matched against your saved RentReady search profile',
+    criteria.bedroomsLabel ? `Bedroom preference: ${criteria.bedroomsLabel}` : 'Bedroom preference included when available',
+    property.phone || property.website ? 'Contact details found through Google Places' : 'Verified through Google Places',
+  ];
+
+  return {
+    matchScore: score,
+    matchReasons,
+    summary:
+      'This verified apartment community is a strong candidate for your saved search. Contact the property to confirm current rent, availability, move-in specials, deposits, lease terms, and screening requirements.',
+    availabilityNote: 'Google Places does not publish live unit availability. Call or visit the property website to confirm current openings.',
+  };
 }
 
 function enrich(property, ai) {

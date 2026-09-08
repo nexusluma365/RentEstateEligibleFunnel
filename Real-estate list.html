@@ -448,8 +448,41 @@ let criteria = {
 };
 
 let currentResults = [];
+let serverResults = null;
 const bedroomLabel = n => n === 0 ? "Studio" : (n >= 4 ? "4+ Bedrooms" : n + (n===1?" Bedroom":" Bedrooms"));
 const money = n => "$" + n.toLocaleString("en-US");
+
+function readAnswers(){
+  try {
+    return JSON.parse(sessionStorage.getItem("rrn_answers_v1") || localStorage.getItem("rrn_answers_v1") || "{}") || {};
+  } catch (_e) {
+    return {};
+  }
+}
+
+function applyAnswerCriteria(){
+  const answers = readAnswers();
+  const params = new URLSearchParams(window.location.search);
+  const category = (params.get("category") || "luxury").toLowerCase();
+  const rentBudget = Number(answers.rent_budget);
+  const beds = normalizeBedrooms(answers.beds_needed);
+  criteria = {
+    ...criteria,
+    city: answers.preferred_city || answers.city || criteria.city,
+    area: answers.preferred_city || answers.city || criteria.area,
+    style: category === "modern" ? "Modern" : "Luxury",
+    budgetMax: Number.isFinite(rentBudget) && rentBudget > 0 ? rentBudget : criteria.budgetMax,
+    bedrooms: beds,
+  };
+}
+
+function normalizeBedrooms(value){
+  const raw = String(value || "").split(",")[0].trim().toLowerCase();
+  if (!raw || raw === "studio") return 0;
+  if (raw.includes("4")) return 4;
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.max(0, Math.min(4, n)) : 2;
+}
 
 function styleAdjacent(a,b){
   const groups = { Luxury:["Luxury","Modern"], Modern:["Modern","Luxury","Standard"], Standard:["Standard","Modern"] };
@@ -513,10 +546,81 @@ function computeMatch(apt, crit){
   return { propertyId: apt.id, matchScore: score, matchReason, locationSummary, bestFor, potentialTradeoff, tags: tags.slice(0,4) };
 }
 function rankApartments(crit){
+  if (serverResults) {
+    return serverResults;
+  }
   return MOCK_APARTMENTS
     .map(apt => ({ verified: apt, rentReady: computeMatch(apt, crit) }))
     .sort((a,b) => b.rentReady.matchScore - a.rentReady.matchScore)
     .filter(r => r.rentReady.matchScore >= 45);
+}
+
+function currentCategory(){
+  const params = new URLSearchParams(window.location.search);
+  return (params.get("category") || "luxury").toLowerCase() === "modern" ? "modern" : "luxury";
+}
+
+async function loadVerifiedApartmentResults(){
+  const answers = readAnswers();
+  if (!answers.lead_id) return;
+  try {
+    const res = await fetch(`/.netlify/functions/get-apartment-results?leadId=${encodeURIComponent(answers.lead_id)}&category=${encodeURIComponent(currentCategory())}`);
+    const data = await res.json().catch(()=>({}));
+    if (!res.ok || !data.ok) throw new Error(data.error || "Could not load apartment results.");
+    if (data.criteria) {
+      criteria.city = data.criteria.city || criteria.city;
+      criteria.area = data.criteria.city || criteria.area;
+      criteria.style = data.criteria.category === "modern" ? "Modern" : "Luxury";
+      criteria.budgetMax = Number(data.criteria.rentBudget) || criteria.budgetMax;
+      criteria.bedrooms = normalizeBedrooms(data.criteria.bedrooms);
+    }
+    serverResults = Array.isArray(data.properties) ? data.properties.map(serverPropertyToResult) : [];
+    if (data.message) {
+      document.getElementById("heroSub").textContent = data.message;
+    }
+  } catch (err) {
+    console.warn("Using local apartment fallback", err);
+    serverResults = null;
+  }
+}
+
+function serverPropertyToResult(property){
+  const phone = property.phone || "";
+  const apt = {
+    id: property.propertyId,
+    name: property.name || "Apartment community",
+    area: criteria.city,
+    address: property.address || criteria.city,
+    phone,
+    phoneDisplay: phone,
+    website: property.website || "",
+    mapsUrl: property.directions || "",
+    rating: typeof property.rating === "number" ? property.rating : null,
+    reviewCount: typeof property.reviewCount === "number" ? property.reviewCount : 0,
+    photo: property.image,
+    style: criteria.style,
+    highRise: false,
+    bedroomsOffered: [criteria.bedrooms],
+    pool: false,
+    fitnessCenter: false,
+    balcony: false,
+    petFriendly: false,
+    modern: currentCategory() === "modern",
+    estRent:{ min: criteria.budgetMax, max: criteria.budgetMax },
+  };
+  const reasons = Array.isArray(property.matchReasons) ? property.matchReasons : [];
+  return {
+    verified: apt,
+    rentReady: {
+      propertyId: apt.id,
+      matchScore: Number(property.matchScore) || 80,
+      matchReason: reasons.join(" ") || property.summary || "Matched from your saved RentReady search criteria.",
+      locationSummary: property.address ? `Located near ${property.address}.` : `Located around ${criteria.city}.`,
+      bestFor: property.summary || `Best for renters searching for ${criteria.style.toLowerCase()} apartments in ${criteria.city}.`,
+      potentialTradeoff: property.availabilityNote || "Confirm current availability directly with the property.",
+      tags: [criteria.style, criteria.city, property.source || "Google Places"].filter(Boolean).slice(0,4),
+    },
+  };
 }
 
 const ICONS = {
@@ -740,6 +844,8 @@ modalOverlay.addEventListener("click", e => { if(e.target === modalOverlay) clos
 
 window.addEventListener("load", async ()=>{
   if (!(await requireListingAccess())) return;
+  applyAnswerCriteria();
+  await loadVerifiedApartmentResults();
   runLoadingSequence(renderAll, false);
 });
 </script>
