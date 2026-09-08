@@ -74,9 +74,9 @@ h2{font-size:28px;line-height:1.1;margin-bottom:18px}
 
   <main class="content">
     <section class="main">
-      <h1><span id="firstName">Your</span>, your RentReady review is ready.</h1>
-      <p class="lead">See what may be increasing your upfront rental cost - and what to prepare before you apply.</p>
-      <p class="lead">We'll also show whether your profile may fit lower-upfront or no-money-down leasing opportunities.</p>
+      <h1>Good News — Your Next Home May Not Require a Security Deposit.</h1>
+      <p class="lead">See Your Rental Options</p>
+      <p class="lead">Continue with RentReady to see what property managers typically look for, Better Your Approval odds and schedule your next tour with confidence—</p>
       <hr class="rule">
 
       <h2>Payment details</h2>
@@ -88,7 +88,7 @@ h2{font-size:28px;line-height:1.1;margin-bottom:18px}
       <div class="next-step">
         <h2>Your next step</h2>
         <p class="copy">Before you start paying application fees, see what your current rental profile may be telling property managers and what you can prepare next.</p>
-        <button class="cta" id="payBtn" type="button" disabled>Unlock My RentReady Review - $10 <span>→</span></button>
+        <button class="cta" id="payBtn" type="button" disabled>Continue With RentReady <span>→</span></button>
       </div>
     </section>
 
@@ -103,9 +103,10 @@ h2{font-size:28px;line-height:1.1;margin-bottom:18px}
           <div class="price">$10</div>
         </div>
         <div class="benefits">
-          <div class="benefit"><b>✓</b><span>See what may be increasing your upfront rental cost.</span></div>
-          <div class="benefit"><b>✓</b><span>Review the income, credit, rental history, budget and move-timing signals from your answers.</span></div>
-          <div class="benefit"><b>✓</b><span>See what to prepare before paying application fees.</span></div>
+          <div class="benefit"><b>✓</b><span>Know What Property Managers Look For</span></div>
+          <div class="benefit"><b>✓</b><span>Better Your Approval odds</span></div>
+          <div class="benefit"><b>✓</b><span>View Listings</span></div>
+          <div class="benefit"><b>✓</b><span>Schedule Your Next Tour With Confidence</span></div>
         </div>
         <p class="plus">Plus: See whether your profile may fit lower-upfront or no-money-down leasing opportunities.</p>
         <div class="mini-table">
@@ -164,9 +165,7 @@ h2{font-size:28px;line-height:1.1;margin-bottom:18px}
   }
 
   function hydrateSummary(answers){
-    var first = answers.first_name || 'Your';
     var full = [answers.first_name, answers.last_name].filter(Boolean).join(' ') || 'Applicant';
-    document.getElementById('firstName').textContent = first;
     document.getElementById('summaryName').textContent = full;
     document.getElementById('summaryCity').textContent = answers.preferred_city || 'Not provided';
     document.getElementById('summaryMove').textContent = label(answers.move_timeline, {
@@ -249,7 +248,7 @@ h2{font-size:28px;line-height:1.1;margin-bottom:18px}
       window.location.href = RESULTS_URL;
     } catch (error) {
       btn.disabled = false;
-      btn.innerHTML = 'Unlock My RentReady Review - $10 <span>→</span>';
+      btn.innerHTML = 'Continue With RentReady <span>→</span>';
       showError(error.message);
     }
   }
