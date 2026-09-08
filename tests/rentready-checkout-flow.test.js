@@ -54,6 +54,7 @@ async function run() {
   const elementsById = {};
   [
     'paymentError',
+    'setupNote',
     'summaryName',
     'summaryCity',
     'summaryMove',
@@ -63,7 +64,6 @@ async function run() {
     'cardExpiry',
     'cardCvc',
     'billingZip',
-    'billingName',
   ].forEach((id) => {
     elementsById[id] = createElement(id);
   });
@@ -80,6 +80,7 @@ async function run() {
     }),
   };
   const mounted = [];
+  const focused = [];
   const requests = [];
   const context = {
     console,
@@ -108,6 +109,9 @@ async function run() {
           return {
             create(type) {
               return {
+                focus() {
+                  focused.push(type);
+                },
                 mount(selector) {
                   mounted.push({ type, selector });
                 },
@@ -118,7 +122,7 @@ async function run() {
         },
         async confirmCardPayment(clientSecret, options) {
           assert.equal(clientSecret, 'pi_test_secret');
-          assert.equal(options.payment_method.billing_details.name, 'Typed Name');
+          assert.equal(options.payment_method.billing_details.name, 'Test Applicant');
           assert.equal(options.payment_method.billing_details.address.postal_code, '12345');
           return { paymentIntent: { id: 'pi_test', status: 'succeeded' } };
         },
@@ -164,13 +168,14 @@ async function run() {
     mounted.map((entry) => entry.type),
     ['cardNumber', 'cardExpiry', 'cardCvc']
   );
+  elementsById.cardNumber.listeners.click();
+  assert.deepEqual(focused, ['cardNumber']);
   assert.equal(
     requests.some((request) => String(request.url).includes('create-payment-intent')),
     false,
     'PaymentIntent should not be created before the user clicks the CTA'
   );
 
-  elementsById.billingName.value = 'Typed Name';
   elementsById.billingZip.value = '12345';
   await elementsById.payBtn.listeners.click();
 

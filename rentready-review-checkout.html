@@ -39,7 +39,7 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
 .card-field.is-focused{border-color:rgba(86,176,122,.9);box-shadow:0 0 0 3px rgba(86,176,122,.13)}
 .card-field.is-invalid{border-color:#b85b52}
 .payment-grid{display:grid;grid-template-columns:1fr 1fr 126px;gap:14px}
-.billing-grid{display:grid;grid-template-columns:1fr 180px;gap:14px}
+.billing-grid{display:grid;grid-template-columns:180px;gap:14px}
 .billing-input,.country-field{width:100%;height:52px;border:1.5px solid var(--line);border-radius:8px;background:#fff;padding:0 17px;font:600 15px var(--font);color:var(--text);box-shadow:0 1px 0 rgba(23,75,51,.03)}
 .billing-input:focus{outline:0;border-color:rgba(86,176,122,.9);box-shadow:0 0 0 3px rgba(86,176,122,.13)}
 .country-field{display:flex;align-items:center;color:var(--muted)}
@@ -49,6 +49,8 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
 .cta:disabled{opacity:.7;cursor:not-allowed;box-shadow:none}
 .error{display:none;color:#a63b32;font-size:14px;line-height:1.45;margin-top:14px}
 .error.show{display:block}
+.setup-note{display:none;width:100%;max-width:650px;margin-top:14px;padding:14px 16px;border:1px solid #f0d2cf;border-radius:8px;background:#fff7f6;color:#a63b32;font-size:14px;line-height:1.45}
+.setup-note.show{display:block}
 .summary{min-width:0;border:1px solid var(--line);border-radius:8px;align-self:start;overflow:hidden;background:#fff;box-shadow:0 18px 46px rgba(23,75,51,.09)}
 .summary-head{background:var(--green);color:#fff;padding:30px 28px 32px}
 .summary-head p{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;opacity:.72;margin-bottom:14px}
@@ -122,16 +124,13 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
         </div>
         <div class="billing-grid">
           <div>
-            <label class="field-label" for="billingName">Name on card</label>
-            <input class="billing-input" id="billingName" name="cc-name" type="text" autocomplete="cc-name" placeholder="Full name">
-          </div>
-          <div>
             <span class="field-label">Country</span>
             <div class="country-field">United States</div>
           </div>
         </div>
       </div>
       <p class="error" id="paymentError"></p>
+      <p class="setup-note" id="setupNote"></p>
 
       <div class="next-step">
         <button class="cta" id="payBtn" type="button" disabled>Continue With RentReady <span>→</span></button>
@@ -198,9 +197,17 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
     el.classList.add('show');
   }
 
+  function showSetupNote(message){
+    var el = document.getElementById('setupNote');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.add('show');
+  }
+
   function bindElementState(element, id){
     var wrapper = document.getElementById(id);
     if (!wrapper) return;
+    wrapper.addEventListener('click', function(){ element.focus(); });
     element.on('focus', function(){ wrapper.classList.add('is-focused'); });
     element.on('blur', function(){ wrapper.classList.remove('is-focused'); });
     element.on('change', function(event){
@@ -321,7 +328,7 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
       btn.disabled = false;
     } catch (err) {
       btn.disabled = true;
-      showError(err.message);
+      showSetupNote(err.message);
     }
   }
 
@@ -329,7 +336,6 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
     var answers = readAnswers();
     var btn = document.getElementById('payBtn');
     var err = document.getElementById('paymentError');
-    var nameInput = document.getElementById('billingName');
     var zipInput = document.getElementById('billingZip');
     if (!stripe || !cardNumber || !answers.lead_id || btn.disabled) return;
     err.classList.remove('show');
@@ -341,13 +347,14 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
         await createPrescreenIntent(answers);
       }
       btn.textContent = 'Confirming payment...';
+      var billingName = [answers.first_name, answers.last_name].filter(Boolean).join(' ') || undefined;
       var result = await stripe.confirmCardPayment(
         paymentClientSecret,
         {
           payment_method: {
             card: cardNumber,
             billing_details: {
-              name: (nameInput && nameInput.value) || [answers.first_name, answers.last_name].filter(Boolean).join(' ') || undefined,
+              name: billingName,
               email: answers.email || undefined,
               address: {
                 postal_code: (zipInput && zipInput.value) || undefined,
