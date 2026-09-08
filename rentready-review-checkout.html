@@ -365,16 +365,24 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
         }
       );
       if (result.error) throw new Error(result.error.message || 'Payment was not completed.');
-      var confirmed = await fetchJson('/.netlify/functions/confirm-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          leadId: answers.lead_id,
-          paymentIntentId: result.paymentIntent ? result.paymentIntent.id : paymentIntentId,
-          product: 'prescreen',
-        }),
-      });
-      if (confirmed.status !== 'succeeded') throw new Error('Payment is still processing. Please try again in a moment.');
+
+      var stripeSucceeded = result.paymentIntent && result.paymentIntent.status === 'succeeded';
+      try {
+        var confirmed = await fetchJson('/.netlify/functions/confirm-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            leadId: answers.lead_id,
+            paymentIntentId: result.paymentIntent ? result.paymentIntent.id : paymentIntentId,
+            product: 'prescreen',
+          }),
+        });
+        if (confirmed.status !== 'succeeded') throw new Error('Payment is still processing. Please try again in a moment.');
+      } catch (confirmError) {
+        if (!stripeSucceeded) throw confirmError;
+        console.warn('Server confirmation failed after Stripe success', confirmError);
+      }
+
       grantResultsAccess();
       window.location.href = RESULTS_URL;
     } catch (error) {
