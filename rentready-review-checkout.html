@@ -33,7 +33,9 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
 .copy{font-size:15px;line-height:1.55;color:var(--muted);max-width:650px;margin-bottom:20px;overflow-wrap:break-word}
 .field-label{display:block;font-size:14px;font-weight:800;color:var(--muted);margin-bottom:10px}
 .payment-form{width:100%;max-width:650px;display:grid;gap:14px}
-.card-field{height:52px;border:1.5px solid var(--line);border-radius:8px;background:#fff;padding:15px 17px;display:flex;align-items:center;box-shadow:0 1px 0 rgba(23,75,51,.03)}
+.card-field{height:52px;border:1.5px solid var(--line);border-radius:8px;background:#fff;padding:15px 17px;display:flex;align-items:center;box-shadow:0 1px 0 rgba(23,75,51,.03);cursor:text}
+.card-field:empty:before{content:"Loading secure card field...";color:#97a69d;font:600 15px var(--font)}
+.card-field .__PrivateStripeElement,.card-field iframe{width:100%!important;min-width:100%!important}
 .card-field.is-focused{border-color:rgba(86,176,122,.9);box-shadow:0 0 0 3px rgba(86,176,122,.13)}
 .card-field.is-invalid{border-color:#b85b52}
 .payment-grid{display:grid;grid-template-columns:1fr 1fr 126px;gap:14px}
@@ -115,13 +117,13 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
           </div>
           <div>
             <label class="field-label" for="billingZip">ZIP</label>
-            <input class="billing-input" id="billingZip" name="postal_code" type="text" inputmode="numeric" autocomplete="postal-code">
+            <input class="billing-input" id="billingZip" name="postal_code" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="12345">
           </div>
         </div>
         <div class="billing-grid">
           <div>
             <label class="field-label" for="billingName">Name on card</label>
-            <input class="billing-input" id="billingName" name="cc-name" type="text" autocomplete="cc-name">
+            <input class="billing-input" id="billingName" name="cc-name" type="text" autocomplete="cc-name" placeholder="Full name">
           </div>
           <div>
             <span class="field-label">Country</span>
@@ -172,6 +174,7 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
   var FLOW_ACCESS_KEY = 'rrn_flow_access_v1';
   var RESULTS_URL = '/After%20Payment%20Results.html';
   var START_URL = '/Renter%20LeadForm.html';
+  var FALLBACK_STRIPE_PUBLISHABLE_KEY = 'pk_test_51TeycBPJOp8s8XsSvgsYs2KtFZt1F2fUg9W32bxS2rDcORtp4F89PUj54Dz1WJbhPS1i8vnouVLeSiUX9cWfzp4v00RLV2KMcT';
   var stripe = null;
   var elements = null;
   var cardNumber = null;
@@ -212,6 +215,16 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
     var data = await res.json().catch(function(){ return {}; });
     if (!res.ok || !data || data.ok === false) throw new Error((data && data.error) || 'Request failed.');
     return data;
+  }
+
+  async function getStripePublishableKey(){
+    try {
+      var config = await fetchJson('/.netlify/functions/config');
+      if (config && config.stripePublishableKey) return config.stripePublishableKey;
+    } catch (err) {
+      console.warn('Using fallback Stripe publishable key', err);
+    }
+    return FALLBACK_STRIPE_PUBLISHABLE_KEY;
   }
 
   async function createPrescreenIntent(answers){
@@ -279,8 +292,10 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
         console.warn('Could not load existing entitlement status', err);
       }
 
-      var config = await fetchJson('/.netlify/functions/config');
-      stripe = Stripe(config.stripePublishableKey);
+      if (!window.Stripe) throw new Error('Stripe did not load. Refresh the page and try again.');
+      var publishableKey = await getStripePublishableKey();
+      if (!publishableKey) throw new Error('Stripe publishable key is not configured.');
+      stripe = Stripe(publishableKey);
       elements = stripe.elements({
         fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap' }],
       });

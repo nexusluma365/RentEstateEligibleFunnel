@@ -7,7 +7,13 @@ exports.handler = async function handler(event) {
     };
   }
 
-  const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY || '';
+  const stripePublishableKey =
+    process.env.STRIPE_PUBLISHABLE_KEY ||
+    process.env.STRIPE_PUBLIC_KEY ||
+    process.env.PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+    process.env.VITE_STRIPE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+    '';
 
   return {
     statusCode: stripePublishableKey ? 200 : 503,

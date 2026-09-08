@@ -101,16 +101,8 @@ async function run() {
         return null;
       },
     },
-    window: {
-      location: {
-        href: '',
-        replace(url) {
-          this.href = url;
-        },
-      },
-    },
     Stripe(key) {
-      assert.equal(key, 'pk_test_mock');
+      assert.match(key, /^pk_test_/);
       return {
         elements() {
           return {
@@ -138,7 +130,7 @@ async function run() {
         return { ok: true, json: async () => ({ ok: true, paid10: false }) };
       }
       if (String(url).includes('config')) {
-        return { ok: true, json: async () => ({ ok: true, stripePublishableKey: 'pk_test_mock' }) };
+        return { ok: false, json: async () => ({ ok: false, error: 'STRIPE_PUBLISHABLE_KEY is not configured.' }) };
       }
       if (String(url).includes('create-payment-intent')) {
         return {
@@ -150,6 +142,15 @@ async function run() {
         return { ok: true, json: async () => ({ ok: true, status: 'succeeded' }) };
       }
       throw new Error(`Unexpected request: ${url}`);
+    },
+  };
+  context.window = {
+    Stripe: context.Stripe,
+    location: {
+      href: '',
+      replace(url) {
+        this.href = url;
+      },
     },
   };
   context.window.rrnTestContext = context;
