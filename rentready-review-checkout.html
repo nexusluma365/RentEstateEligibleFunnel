@@ -24,9 +24,10 @@ body{padding:24px}
 .progress .bar{width:96px;height:4px;border-radius:999px;background:var(--accent)}
 .content{width:min(100%,1160px);max-width:100%;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,400px);gap:48px;align-items:start;padding:0 44px 52px}
 .main{padding-top:8px}
-h1{font-size:clamp(32px,3.35vw,44px);line-height:1.08;letter-spacing:0;font-weight:900;margin-bottom:22px;max-width:650px;overflow-wrap:break-word}
-.lead-kicker{font-size:19px;font-weight:800;line-height:1.35;color:var(--green);margin-bottom:14px;overflow-wrap:break-word}
-.lead{font-size:17px;line-height:1.5;color:var(--muted);max-width:650px;margin-bottom:0;overflow-wrap:break-word}
+.hero-copy{max-width:650px;text-align:center}
+h1{font-size:clamp(32px,3.35vw,44px);line-height:1.08;letter-spacing:0;font-weight:900;margin:0 auto 22px;max-width:650px;overflow-wrap:break-word}
+.lead-kicker{font-size:19px;font-weight:800;line-height:1.35;color:var(--green);margin:0 auto 14px;overflow-wrap:break-word}
+.lead{font-size:17px;line-height:1.5;color:var(--muted);max-width:650px;margin:0 auto;overflow-wrap:break-word}
 .rule{border:0;border-top:1px solid var(--line);margin:30px 0 26px;max-width:650px}
 h2{font-size:24px;line-height:1.1;margin-bottom:12px}
 .copy{font-size:15px;line-height:1.55;color:var(--muted);max-width:650px;margin-bottom:20px;overflow-wrap:break-word}
@@ -66,7 +67,7 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
 .mini-row strong{color:var(--green);text-align:right;overflow-wrap:anywhere}
 .disclaimer{font-size:12px;line-height:1.5;color:#9aaa9f;margin-top:26px}
 @media(max-width:1100px){.content{grid-template-columns:minmax(0,1fr) 370px;gap:32px;padding-inline:32px}h1{font-size:38px}.progress{font-size:16px}.progress .bar{width:62px}}
-@media(max-width:860px){body{padding:0}.page{width:100%;min-height:100dvh;border:0;overflow:hidden}.nav{padding:24px 20px}.secure span{display:none}.progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;font-size:12px;padding:24px 20px 34px}.step{min-width:0;flex-direction:column;gap:8px;text-align:center;white-space:normal;line-height:1.15}.progress .bar{display:none}.progress .dot{width:34px;height:34px;flex-basis:34px;margin:0 auto}.content{width:100%;grid-template-columns:minmax(0,1fr);padding:0 20px 34px;gap:30px}.main{min-width:0;padding-top:0}h1{max-width:100%;font-size:29px;line-height:1.08}.lead,.lead-kicker{max-width:100%;font-size:16px}.payment-grid,.billing-grid{grid-template-columns:1fr}.summary{width:100%}.summary-head{padding:28px 28px 30px}.summary-head h2{font-size:28px}.summary-body{padding:26px}.line-item{gap:14px}.price{font-size:32px}.benefit{font-size:15px}.cta{width:100%}}
+@media(max-width:860px){body{padding:0}.page{width:100%;min-height:100dvh;border:0;overflow:hidden}.nav{padding:24px 20px}.secure span{display:none}.progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;font-size:12px;padding:24px 20px 34px}.step{min-width:0;flex-direction:column;gap:8px;text-align:center;white-space:normal;line-height:1.15}.progress .bar{display:none}.progress .dot{width:34px;height:34px;flex-basis:34px;margin:0 auto}.content{width:100%;grid-template-columns:minmax(0,1fr);padding:0 20px 34px;gap:30px}.main{min-width:0;padding-top:0}.hero-copy{max-width:100%}h1{max-width:100%;font-size:29px;line-height:1.08}.lead,.lead-kicker{max-width:100%;font-size:16px}.payment-grid,.billing-grid{grid-template-columns:1fr}.summary{width:100%}.summary-head{padding:28px 28px 30px}.summary-head h2{font-size:28px}.summary-body{padding:26px}.line-item{gap:14px}.price{font-size:32px}.benefit{font-size:15px}.cta{width:100%}}
 </style>
 </head>
 <body>
@@ -89,9 +90,11 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
 
   <main class="content">
     <section class="main">
-      <h1>Good News — Your Next Home May Not Require a Security Deposit.</h1>
-      <p class="lead-kicker">See Your Rental Options</p>
-      <p class="lead">Continue with RentReady to see what property managers typically look for, Better Your Approval odds and schedule your next tour with confidence—</p>
+      <div class="hero-copy">
+        <h1>Good News — Your Next Home May Not Require a Security Deposit.</h1>
+        <p class="lead-kicker">See Your Rental Options</p>
+        <p class="lead">Continue with RentReady to see what property managers typically look for, Better Your Approval odds and schedule your next tour with confidence—</p>
+      </div>
       <hr class="rule">
 
       <h2>Payment details</h2>
@@ -136,7 +139,7 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
     <aside class="summary">
       <div class="summary-head">
         <p>RentReady Review</p>
-        <h2>Your Rental Readiness Outlook</h2>
+        <h2>Continue With RentReady</h2>
       </div>
       <div class="summary-body">
         <div class="line-item">
