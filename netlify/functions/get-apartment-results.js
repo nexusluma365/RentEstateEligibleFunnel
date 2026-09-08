@@ -15,6 +15,14 @@ const FALLBACK_IMAGES = {
 };
 const MAX_RESULTS = 8;
 
+class GooglePlacesError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = 'GooglePlacesError';
+    this.status = status;
+  }
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -52,7 +60,21 @@ exports.handler = async (event) => {
     const cached = await getApartmentResults(leadId, category);
     if (isUsableCachedResult(cached, criteria)) return json(200, { ok: true, ...cached });
 
-    const rawProperties = await fetchGooglePlaces(criteria);
+    let rawProperties;
+    try {
+      rawProperties = await fetchGooglePlaces(criteria);
+    } catch (err) {
+      if (err instanceof GooglePlacesError) {
+        return json(502, {
+          ok: false,
+          error: err.message,
+          provider: 'google_places',
+          googleStatus: err.status,
+          criteria,
+        });
+      }
+      throw err;
+    }
     if (!rawProperties.length) {
       const empty = {
         provider: process.env.GOOGLE_PLACES_API_KEY ? 'google_places' : 'not_configured',
@@ -107,19 +129,54 @@ async function fetchGooglePlaces(criteria) {
   const key = process.env.GOOGLE_PLACES_API_KEY;
   if (!key) return [];
 
-  const budgetText = criteria.rentBudget ? ` around $${criteria.rentBudget} per month` : '';
-  const bedroomText = criteria.bedroomsLabel ? ` ${criteria.bedroomsLabel}` : '';
-  const query = `${criteria.category === 'luxury' ? 'luxury' : 'modern'}${bedroomText} apartments${budgetText} in ${criteria.city}`;
-  const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
-  url.searchParams.set('query', query);
-  url.searchParams.set('key', key);
+  const resultsByPlaceId = new Map();
+  for (const query of googlePlaceQueries(criteria)) {
+    const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
+    url.searchParams.set('query', query);
+    url.searchParams.set('type', 'real_estate_agency');
+    url.searchParams.set('key', key);
 
-  const resp = await fetch(url);
-  const data = await resp.json().catch(() => ({}));
-  const results = Array.isArray(data.results) ? data.results.slice(0, MAX_RESULTS) : [];
+    const resp = await fetch(url);
+    const data = await resp.json().catch(() => ({}));
+    assertGooglePlacesResponse(data);
+    const results = Array.isArray(data.results) ? data.results : [];
+    results.forEach((place) => {
+      if (place.place_id && !resultsByPlaceId.has(place.place_id)) {
+        resultsByPlaceId.set(place.place_id, place);
+      }
+    });
+    if (results.length) break;
+    if (resultsByPlaceId.size >= MAX_RESULTS) break;
+  }
+
+  const results = Array.from(resultsByPlaceId.values()).slice(0, MAX_RESULTS);
   const details = await Promise.all(results.map((p) => fetchPlaceDetails(p.place_id, key)));
 
   return results.map((p, index) => normalizePlace(p, details[index], criteria, key)).filter((p) => p.propertyId && p.name);
+}
+
+function googlePlaceQueries(criteria) {
+  const category = criteria.category === 'luxury' ? 'luxury' : 'modern';
+  const bedroomText = criteria.bedroomsLabel ? `${criteria.bedroomsLabel} ` : '';
+  const city = criteria.city;
+  return [
+    `${category} ${bedroomText}apartments in ${city}`,
+    `${category} apartment communities in ${city}`,
+    `${bedroomText}apartments for rent in ${city}`,
+    `apartment communities in ${city}`,
+  ];
+}
+
+function assertGooglePlacesResponse(data) {
+  const status = data && data.status;
+  if (!status || status === 'OK' || status === 'ZERO_RESULTS') return;
+
+  const googleMessage = data.error_message ? ` ${data.error_message}` : '';
+  const setupStatuses = new Set(['REQUEST_DENIED', 'INVALID_REQUEST', 'OVER_QUERY_LIMIT']);
+  const message = setupStatuses.has(status)
+    ? `Google Places is not returning apartment results because of a Google Maps API setup issue: ${status}.${googleMessage}`
+    : `Google Places returned ${status}.${googleMessage}`;
+  throw new GooglePlacesError(message.trim(), status);
 }
 
 async function fetchPlaceDetails(placeId, key) {
@@ -264,6 +321,7 @@ function isUsableCachedResult(cached, criteria) {
   if (Number(cached.criteria.rentBudget || 0) !== Number(criteria.rentBudget || 0)) return false;
   if (Number(cached.criteria.bedrooms ?? -1) !== Number(criteria.bedrooms ?? -1)) return false;
   const properties = Array.isArray(cached.properties) ? cached.properties : [];
+  if (!properties.length) return false;
   return properties.every((property) => {
     const website = String(property.website || '');
     const phone = String(property.phone || '');

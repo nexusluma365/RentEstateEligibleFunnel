@@ -51,16 +51,17 @@ async function run() {
   const oldGoogleKey = process.env.GOOGLE_PLACES_API_KEY;
   const oldOpenAIKey = process.env.OPENAI_API_KEY;
   const urls = [];
+  let textSearchCalls = 0;
   process.env.GOOGLE_PLACES_API_KEY = 'google_test_key';
   delete process.env.OPENAI_API_KEY;
 
   global.fetch = async (url) => {
     urls.push(String(url));
     if (String(url).includes('/textsearch/')) {
+      textSearchCalls++;
       const parsed = new URL(String(url));
       const query = parsed.searchParams.get('query');
       assert.match(query, /luxury|modern/i);
-      assert.match(query, /1600/);
       assert.match(query, /concord/i);
       return {
         json: async () => ({
@@ -139,10 +140,12 @@ async function run() {
     assert.equal(body.properties[0].website, 'https://example.com/concord-reserve');
     assert.match(body.properties[0].availabilityNote, /availability/i);
     assert.equal(savedResults.length, 1);
+    assert.equal(textSearchCalls, 1);
     assert(urls.some((url) => url.includes('/textsearch/')));
     assert(urls.some((url) => url.includes('/details/')));
 
     urls.length = 0;
+    textSearchCalls = 0;
     const recovery = await loadHandler({
       lead: {
         preferred_city: 'Concord, NC',
@@ -175,6 +178,139 @@ async function run() {
     assert.equal(recoveryBody.ok, true);
     assert.equal(recoveryBody.criteria.category, 'modern');
     assert.deepEqual(recovery.retrieveCalls, ['pi_modern_upsell']);
+
+    urls.length = 0;
+    let deniedCalls = 0;
+    global.fetch = async (url) => {
+      urls.push(String(url));
+      if (String(url).includes('/textsearch/')) {
+        deniedCalls++;
+        return {
+          json: async () => ({
+            status: 'REQUEST_DENIED',
+            error_message: 'This API key is not authorized to use this service or API.',
+            results: [],
+          }),
+        };
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    };
+    const denied = await loadHandler({
+      lead: {
+        preferred_city: 'Concord, NC',
+        rent_budget: 1600,
+        beds_needed: 'studio',
+      },
+      entitlements: {
+        paid27: true,
+        purchasedCategory: 'luxury',
+      },
+    });
+    const deniedRes = await denied.handler({
+      httpMethod: 'GET',
+      queryStringParameters: { leadId: 'lead_123', category: 'luxury' },
+    });
+    const deniedBody = JSON.parse(deniedRes.body);
+
+    assert.equal(deniedRes.statusCode, 502);
+    assert.equal(deniedBody.ok, false);
+    assert.equal(deniedBody.googleStatus, 'REQUEST_DENIED');
+    assert.match(deniedBody.error, /Google Maps API setup issue/);
+    assert.equal(denied.savedResults.length, 0);
+    assert.equal(deniedCalls, 1);
+
+    urls.length = 0;
+    let broadSearchCalls = 0;
+    global.fetch = async (url) => {
+      urls.push(String(url));
+      if (String(url).includes('/textsearch/')) {
+        broadSearchCalls++;
+        return {
+          json: async () => ({
+            status: broadSearchCalls === 1 ? 'ZERO_RESULTS' : 'OK',
+            results:
+              broadSearchCalls === 1
+                ? []
+                : [
+                    {
+                      place_id: 'place_broader_1',
+                      name: 'Broad Concord Apartments',
+                      formatted_address: '10 Union St, Concord, NC',
+                      rating: 4.2,
+                      user_ratings_total: 42,
+                      business_status: 'OPERATIONAL',
+                    },
+                  ],
+          }),
+        };
+      }
+      if (String(url).includes('/details/')) {
+        return {
+          json: async () => ({
+            result: {
+              name: 'Broad Concord Apartments',
+              formatted_address: '10 Union St, Concord, NC',
+              formatted_phone_number: '(704) 555-0101',
+              website: 'https://example.com/broad-concord',
+              url: 'https://maps.google.com/?cid=broadconcord',
+              rating: 4.2,
+              user_ratings_total: 42,
+              business_status: 'OPERATIONAL',
+            },
+          }),
+        };
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    };
+    const broad = await loadHandler({
+      lead: {
+        preferred_city: 'Concord, NC',
+        rent_budget: 1600,
+        beds_needed: 'studio',
+      },
+      entitlements: {
+        paid27: true,
+        purchasedCategory: 'luxury',
+      },
+    });
+    const broadRes = await broad.handler({
+      httpMethod: 'GET',
+      queryStringParameters: { leadId: 'lead_123', category: 'luxury' },
+    });
+    const broadBody = JSON.parse(broadRes.body);
+
+    assert.equal(broadRes.statusCode, 200);
+    assert.equal(broadBody.properties.length, 1);
+    assert.equal(broadBody.properties[0].name, 'Broad Concord Apartments');
+    assert.equal(broadSearchCalls, 2);
+
+    urls.length = 0;
+    const emptyCache = await loadHandler({
+      lead: {
+        preferred_city: 'Concord, NC',
+        rent_budget: 1600,
+        beds_needed: 'studio',
+      },
+      entitlements: {
+        paid27: true,
+        purchasedCategory: 'luxury',
+      },
+      cached: {
+        provider: 'google_places',
+        criteria: { category: 'luxury', city: 'Concord, NC', rentBudget: 1600, bedrooms: 0 },
+        properties: [],
+      },
+    });
+    const emptyCacheRes = await emptyCache.handler({
+      httpMethod: 'GET',
+      queryStringParameters: { leadId: 'lead_123', category: 'luxury' },
+    });
+    const emptyCacheBody = JSON.parse(emptyCacheRes.body);
+
+    assert.equal(emptyCacheRes.statusCode, 200);
+    assert.equal(emptyCacheBody.properties.length, 1);
+    assert.equal(emptyCacheBody.properties[0].name, 'Broad Concord Apartments');
+    assert(urls.some((url) => url.includes('/textsearch/')));
   } finally {
     global.fetch = oldFetch;
     if (oldGoogleKey === undefined) delete process.env.GOOGLE_PLACES_API_KEY;
