@@ -16,6 +16,35 @@ const PRODUCTS = {
   creditkit: { amount: 9700, field: 'paid97', label: 'RentReady Credit Action Kit' },
 };
 
+async function recoverPrescreenEntitlements(stripe, leadId, prescreenPaymentIntentId, current) {
+  if (!prescreenPaymentIntentId) return current;
+  let pi;
+  try {
+    pi = await stripe.paymentIntents.retrieve(prescreenPaymentIntentId);
+  } catch (err) {
+    console.warn('charge-upsell prescreen recovery lookup failed', err.code || err.message);
+    return current;
+  }
+  const metadata = pi.metadata || {};
+  if (metadata.leadId !== leadId || metadata.product !== 'prescreen' || pi.status !== 'succeeded') {
+    return current;
+  }
+  if (!pi.customer || !pi.payment_method) return current;
+
+  const patch = {
+    paid10: true,
+    stripeCustomerId: pi.customer,
+    defaultPaymentMethodId: pi.payment_method,
+  };
+
+  try {
+    return await patchEntitlements(leadId, patch);
+  } catch (err) {
+    console.error('charge-upsell prescreen recovery save error', err);
+    return { ...current, ...patch, leadId };
+  }
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -28,14 +57,19 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'Invalid JSON body' }) };
   }
 
-  const { leadId, product, idempotencyKey } = body;
+  const { leadId, product, idempotencyKey, prescreenPaymentIntentId } = body;
   const def = PRODUCTS[product];
   if (!leadId || !def || !idempotencyKey) {
     return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'Missing or invalid fields' }) };
   }
 
   try {
-    const entitlements = await getEntitlements(leadId);
+    let entitlements = await getEntitlements(leadId);
+    const stripe = getStripe();
+
+    if (!entitlements.paid10 || !entitlements.stripeCustomerId || !entitlements.defaultPaymentMethodId) {
+      entitlements = await recoverPrescreenEntitlements(stripe, leadId, prescreenPaymentIntentId, entitlements);
+    }
 
     if (!entitlements.paid10 || !entitlements.stripeCustomerId || !entitlements.defaultPaymentMethodId) {
       return {
@@ -61,8 +95,6 @@ exports.handler = async (event) => {
         };
       }
     }
-
-    const stripe = getStripe();
 
     let pi;
     try {
@@ -100,8 +132,14 @@ exports.handler = async (event) => {
     if (pi.status === 'succeeded') {
       const patch = { [def.field]: true };
       if (def.category) patch.purchasedCategory = def.category;
-      await patchEntitlements(leadId, patch);
-      return { statusCode: 200, body: JSON.stringify({ ok: true, status: 'succeeded' }) };
+      let warning = null;
+      try {
+        await patchEntitlements(leadId, patch);
+      } catch (err) {
+        warning = 'Purchase succeeded, but access status could not be saved immediately.';
+        console.error('charge-upsell entitlement patch error', err);
+      }
+      return { statusCode: 200, body: JSON.stringify({ ok: true, status: 'succeeded', warning }) };
     }
 
     if (pi.status === 'requires_action') {

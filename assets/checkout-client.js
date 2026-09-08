@@ -13,6 +13,7 @@
 (() => {
 const ANSWERS_KEY = 'rrn_answers_v1';
 const FLOW_ACCESS_KEY = 'rrn_flow_access_v1';
+const PRESCREEN_INTENT_KEY = 'rrn_prescreen_payment_intent_v1';
 const FLOW_ACCESS_TTL_MS = 20 * 60 * 1000;
 let rrnConfigPromise = null;
 
@@ -53,6 +54,14 @@ function rrnHasRecentFlowAccess(step, options) {
 
 function rrnNewIdempotencyKey() {
   return (crypto.randomUUID ? crypto.randomUUID() : ('k_' + Date.now() + '_' + Math.random().toString(36).slice(2)));
+}
+
+function rrnPrescreenPaymentIntentId() {
+  try {
+    return sessionStorage.getItem(PRESCREEN_INTENT_KEY) || localStorage.getItem(PRESCREEN_INTENT_KEY) || null;
+  } catch (_e) {
+    return null;
+  }
 }
 
 async function rrnLoadStripeJs() {
@@ -104,7 +113,7 @@ async function rrnChargeUpsell(product, publishableKey) {
   const res = await fetch('/.netlify/functions/charge-upsell', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ leadId, product, idempotencyKey }),
+    body: JSON.stringify({ leadId, product, idempotencyKey, prescreenPaymentIntentId: rrnPrescreenPaymentIntentId() }),
   });
   const data = await res.json().catch(() => ({}));
   if (!data || !data.ok) return 'failed';
@@ -155,13 +164,18 @@ async function rrnHandleAction(clientSecret, leadId, product, publishableKey) {
   const result = await stripe.confirmCardPayment(clientSecret);
   if (result.error) return 'failed';
 
-  const confirmRes = await fetch('/.netlify/functions/confirm-intent', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ leadId, paymentIntentId: result.paymentIntent.id, product }),
-  });
-  const confirmData = await confirmRes.json().catch(() => ({}));
-  return confirmData && confirmData.ok ? confirmData.status : 'failed';
+  const stripeSucceeded = result.paymentIntent && result.paymentIntent.status === 'succeeded';
+  try {
+    const confirmRes = await fetch('/.netlify/functions/confirm-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId, paymentIntentId: result.paymentIntent.id, product }),
+    });
+    const confirmData = await confirmRes.json().catch(() => ({}));
+    return confirmData && confirmData.ok ? confirmData.status : (stripeSucceeded ? 'succeeded' : 'failed');
+  } catch (_e) {
+    return stripeSucceeded ? 'succeeded' : 'failed';
+  }
 }
 
 function rrnDownloadUrl(product) {
@@ -183,6 +197,7 @@ async function rrnEmailAsset(type, category) {
 
 window.rrnLeadId = rrnLeadId;
 window.rrnNewIdempotencyKey = rrnNewIdempotencyKey;
+window.rrnPrescreenPaymentIntentId = rrnPrescreenPaymentIntentId;
 window.rrnLoadStripeJs = rrnLoadStripeJs;
 window.rrnGetConfig = rrnGetConfig;
 window.rrnGetStripePublishableKey = rrnGetStripePublishableKey;

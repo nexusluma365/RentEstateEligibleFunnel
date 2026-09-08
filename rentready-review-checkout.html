@@ -171,6 +171,7 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
 (function(){
   var ANSWERS_STORAGE_KEY = 'rrn_answers_v1';
   var FLOW_ACCESS_KEY = 'rrn_flow_access_v1';
+  var PRESCREEN_INTENT_KEY = 'rrn_prescreen_payment_intent_v1';
   var RESULTS_URL = '/After%20Payment%20Results.html';
   var START_URL = '/Renter%20LeadForm.html';
   var FALLBACK_STRIPE_PUBLISHABLE_KEY = 'pk_test_51TeycBPJOp8s8XsSvgsYs2KtFZt1F2fUg9W32bxS2rDcORtp4F89PUj54Dz1WJbhPS1i8vnouVLeSiUX9cWfzp4v00RLV2KMcT';
@@ -253,6 +254,12 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
         at: Date.now(),
       }));
     } catch (_e) {}
+  }
+
+  function rememberPrescreenPaymentIntent(intentId){
+    if (!intentId) return;
+    try { sessionStorage.setItem(PRESCREEN_INTENT_KEY, intentId); } catch (_e) {}
+    try { localStorage.setItem(PRESCREEN_INTENT_KEY, intentId); } catch (_e) {}
   }
 
   function hydrateSummary(answers){
@@ -367,6 +374,7 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
       if (result.error) throw new Error(result.error.message || 'Payment was not completed.');
 
       var stripeSucceeded = result.paymentIntent && result.paymentIntent.status === 'succeeded';
+      rememberPrescreenPaymentIntent(result.paymentIntent ? result.paymentIntent.id : paymentIntentId);
       try {
         var confirmed = await fetchJson('/.netlify/functions/confirm-intent', {
           method: 'POST',
