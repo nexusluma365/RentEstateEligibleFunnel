@@ -49,7 +49,7 @@ exports.handler = async (event) => {
       currency: 'usd',
       customer: customer.id,
       setup_future_usage: 'off_session',
-      automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
+      payment_method_types: ['card'],
       metadata: { leadId, product: 'prescreen' },
     });
 
@@ -71,6 +71,18 @@ exports.handler = async (event) => {
     };
   } catch (err) {
     console.error('create-payment-intent error', err);
-    return { statusCode: 500, body: JSON.stringify({ ok: false, error: 'Could not start checkout.' }) };
+    const message = err && err.message ? err.message : '';
+    const setupError =
+      message.includes('STRIPE_SECRET_KEY') ||
+      message.includes('Invalid API Key') ||
+      message.includes('No API key provided');
+
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        ok: false,
+        error: setupError ? message : 'Could not start checkout.',
+      }),
+    };
   }
 };
