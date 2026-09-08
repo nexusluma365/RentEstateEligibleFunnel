@@ -575,10 +575,18 @@ async function loadVerifiedApartmentResults(){
       const upsellIntentId = rrnApartmentPaymentIntentId(category);
       if (upsellIntentId) params.set("upsellPaymentIntentId", upsellIntentId);
     }
-    let res = await fetch(`/.netlify/functions/get-apartment-results?${params.toString()}`);
+    let res = await fetch("/.netlify/functions/get-apartment-results", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...Object.fromEntries(params.entries()), answers }),
+    });
     let data = await res.json().catch(()=>({}));
     if (res.status === 404 && data.error === "No saved questionnaire was found." && await resyncSavedQuestionnaire(answers)) {
-      res = await fetch(`/.netlify/functions/get-apartment-results?${params.toString()}`);
+      res = await fetch("/.netlify/functions/get-apartment-results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...Object.fromEntries(params.entries()), answers }),
+      });
       data = await res.json().catch(()=>({}));
     }
     if (!res.ok || !data.ok) throw new Error(data.error || "Could not load apartment results.");

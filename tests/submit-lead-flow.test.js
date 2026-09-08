@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-function loadHandler() {
+function loadHandler(options = {}) {
   const storePath = require.resolve('../netlify/functions/_lib/store');
   const fnPath = require.resolve('../netlify/functions/submit-lead');
   delete require.cache[fnPath];
@@ -11,7 +11,11 @@ function loadHandler() {
     filename: storePath,
     loaded: true,
     exports: {
-      saveLead: async (leadId, answers) => savedLeads.push({ leadId, answers }),
+      saveLead:
+        options.saveLead ||
+        (async (leadId, answers) => {
+          savedLeads.push({ leadId, answers });
+        }),
     },
   };
 
@@ -72,6 +76,27 @@ async function run() {
     assert.equal(forwarded.savedLeads.length, 1);
     assert.equal(forwarded.savedLeads[0].leadId, 'lead_456');
     assert.equal(forwardedPayload.lead_id, 'lead_456');
+
+    delete process.env.GOOGLE_SCRIPT_URL;
+    const storageFailure = loadHandler({
+      saveLead: async () => {
+        throw new Error('blob write failed');
+      },
+    });
+    const storageFailureRes = await storageFailure.handler({
+      httpMethod: 'POST',
+      body: JSON.stringify({
+        lead_id: 'lead_789',
+        email: 'third@example.com',
+      }),
+    });
+    const storageFailureBody = JSON.parse(storageFailureRes.body);
+
+    assert.equal(storageFailureRes.statusCode, 200);
+    assert.equal(storageFailureBody.ok, false);
+    assert.equal(storageFailureBody.saved, false);
+    assert.equal(storageFailureBody.sheetsOk, false);
+    assert.match(storageFailureBody.error, /Could not save questionnaire/);
   } finally {
     if (oldGoogleUrl === undefined) delete process.env.GOOGLE_SCRIPT_URL;
     else process.env.GOOGLE_SCRIPT_URL = oldGoogleUrl;

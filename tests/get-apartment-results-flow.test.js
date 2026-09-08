@@ -180,6 +180,36 @@ async function run() {
     assert.deepEqual(recovery.retrieveCalls, ['pi_modern_upsell']);
 
     urls.length = 0;
+    textSearchCalls = 0;
+    const clientAnswersFallback = await loadHandler({
+      lead: null,
+      entitlements: {
+        paid27: true,
+        purchasedCategory: 'luxury',
+      },
+    });
+    const clientAnswersFallbackRes = await clientAnswersFallback.handler({
+      httpMethod: 'POST',
+      body: JSON.stringify({
+        leadId: 'lead_client_answers',
+        category: 'luxury',
+        answers: {
+          lead_id: 'lead_client_answers',
+          preferred_city: 'Concord',
+          rent_budget: 1600,
+          beds_needed: '1',
+        },
+      }),
+    });
+    const clientAnswersFallbackBody = JSON.parse(clientAnswersFallbackRes.body);
+
+    assert.equal(clientAnswersFallbackRes.statusCode, 200);
+    assert.equal(clientAnswersFallbackBody.ok, true);
+    assert.equal(clientAnswersFallbackBody.criteria.city, 'Concord, NC');
+    assert.equal(clientAnswersFallbackBody.properties.length, 1);
+    assert.equal(clientAnswersFallbackBody.properties[0].name, 'Concord Reserve Apartments');
+
+    urls.length = 0;
     let deniedCalls = 0;
     global.fetch = async (url) => {
       urls.push(String(url));

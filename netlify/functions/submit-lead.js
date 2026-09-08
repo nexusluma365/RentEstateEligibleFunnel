@@ -1,57 +1,46 @@
 const { saveLead } = require('./_lib/store');
 
+function json(statusCode, body) {
+  return {
+    statusCode,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  };
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: { Allow: 'POST' },
-      body: JSON.stringify({ ok: false, error: 'Method not allowed' }),
-    };
+    return { statusCode: 405, headers: { Allow: 'POST' }, body: JSON.stringify({ ok: false, error: 'Method not allowed' }) };
   }
 
   let payload = {};
   try {
     payload = event.body ? JSON.parse(event.body) : {};
   } catch (_err) {
-    return {
-      statusCode: 400,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: false, error: 'Invalid JSON payload.' }),
-    };
+    return json(400, { ok: false, error: 'Invalid JSON payload.' });
   }
 
   const leadId = String(payload.lead_id || payload.leadId || '').trim();
   if (!leadId) {
-    return {
-      statusCode: 400,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: false, error: 'lead_id is required.' }),
-    };
+    return json(400, { ok: false, error: 'lead_id is required.' });
   }
 
+  let saved = false;
   try {
     await saveLead(leadId, { ...payload, lead_id: leadId });
+    saved = true;
   } catch (err) {
     console.error('lead save failed', err);
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: false, error: 'Could not save questionnaire.' }),
-    };
   }
 
   const googleScriptUrl = process.env.GOOGLE_SCRIPT_URL || '';
   if (!googleScriptUrl) {
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ok: false,
-        saved: true,
-        sheetsOk: false,
-        error: 'GOOGLE_SCRIPT_URL is not configured.',
-      }),
-    };
+    return json(200, {
+      ok: false,
+      saved,
+      sheetsOk: false,
+      error: saved ? 'GOOGLE_SCRIPT_URL is not configured.' : 'Could not save questionnaire.',
+    });
   }
 
   try {
@@ -65,27 +54,19 @@ exports.handler = async function handler(event) {
     try { data = JSON.parse(text); } catch (_err) { data = { ok: res.ok, raw: text }; }
 
     const sheetsOk = !!(res.ok && data && data.ok !== false);
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ok: sheetsOk,
-        saved: true,
-        sheetsOk,
-        sheets: data,
-        error: sheetsOk ? undefined : 'Google Sheets did not accept the lead.',
-      }),
-    };
+    return json(200, {
+      ok: sheetsOk,
+      saved,
+      sheetsOk,
+      sheets: data,
+      error: sheetsOk ? undefined : saved ? 'Google Sheets did not accept the lead.' : 'Could not save questionnaire.',
+    });
   } catch (err) {
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ok: false,
-        saved: true,
-        sheetsOk: false,
-        error: String(err && err.message ? err.message : err),
-      }),
-    };
+    return json(200, {
+      ok: false,
+      saved,
+      sheetsOk: false,
+      error: saved ? String(err && err.message ? err.message : err) : 'Could not save questionnaire.',
+    });
   }
 };

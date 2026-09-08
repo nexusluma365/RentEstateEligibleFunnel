@@ -1,4 +1,5 @@
 // GET /.netlify/functions/get-apartment-results?leadId=...&category=modern|luxury
+// POST body: { leadId, category, upsellPaymentIntentId, answers }
 //
 // Produces personalized apartment results only after the $27 Modern/Luxury
 // charge is server-verified. Factual property data comes from Google Places
@@ -24,11 +25,11 @@ class GooglePlacesError extends Error {
 }
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'GET') {
+  if (event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const q = event.queryStringParameters || {};
+  const q = requestData(event);
   let leadId = q.leadId;
   let category = (q.category || '').toLowerCase();
   const upsellPaymentIntentId = q.upsellPaymentIntentId || '';
@@ -53,7 +54,7 @@ exports.handler = async (event) => {
       return json(403, { ok: false, error: 'This apartment list is not unlocked yet.' });
     }
 
-    const lead = await getLead(leadId);
+    const lead = (await getLead(leadId)) || parseClientAnswers(q.answers, leadId);
     if (!lead) return json(404, { ok: false, error: 'No saved questionnaire was found.' });
 
     const criteria = buildCriteria(lead, category);
@@ -97,6 +98,29 @@ exports.handler = async (event) => {
     return json(500, { ok: false, error: 'Could not load apartment results right now.' });
   }
 };
+
+function requestData(event) {
+  const q = event.queryStringParameters || {};
+  if (event.httpMethod !== 'POST') return q;
+  try {
+    const body = JSON.parse(event.body || '{}');
+    return { ...q, ...body };
+  } catch (_err) {
+    return q;
+  }
+}
+
+function parseClientAnswers(raw, leadId) {
+  if (!raw) return null;
+  try {
+    const answers = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    const answerLeadId = String(answers.lead_id || answers.leadId || '').trim();
+    if (answerLeadId !== leadId) return null;
+    return { ...answers, lead_id: leadId };
+  } catch (_err) {
+    return null;
+  }
+}
 
 async function recoverApartmentEntitlement(leadId, category, paymentIntentId, current) {
   let pi;
@@ -336,7 +360,7 @@ function isUsableCachedResult(cached, criteria) {
 }
 
 function buildCriteria(lead, category) {
-  const city = clean(lead.preferred_city || lead.city) || 'United States';
+  const city = normalizeCity(clean(lead.preferred_city || lead.city)) || 'United States';
   const rentBudget = Number(lead.rent_budget) || null;
   const bedrooms = normalizeBedrooms(lead.beds_needed);
   return {
@@ -348,6 +372,28 @@ function buildCriteria(lead, category) {
     moveTimeline: clean(lead.move_timeline),
     moveReason: clean(lead.move_reason),
   };
+}
+
+function normalizeCity(city) {
+  const value = clean(city);
+  if (!value) return '';
+  if (value.includes(',') || /\b(NC|SC|GA|TX)\b/i.test(value)) return value;
+  const northCarolinaTargets = new Set([
+    'charlotte',
+    'concord',
+    'huntersville',
+    'matthews',
+    'pineville',
+    'gastonia',
+    'uptown charlotte',
+    'south end',
+    'noda',
+    'university city',
+    'ballantyne',
+    'dilworth',
+    'plaza midwood',
+  ]);
+  return northCarolinaTargets.has(value.toLowerCase()) ? `${value}, NC` : value;
 }
 
 function normalizeBedrooms(value) {
