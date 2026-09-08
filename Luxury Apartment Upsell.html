@@ -727,7 +727,7 @@
     });
 
     sheetConfirm.addEventListener('click', () => {
-      window.location.href = realEstateListUrl();
+      window.location.href = sheetConfirm.dataset.target || realEstateListUrl();
     });
 
     requireUpsellAccess();
@@ -814,16 +814,16 @@
 
     function showDeclinedPopup() {
       const city = selectedCity();
-      sheetTitle.textContent = "We Couldn’t Complete Your Upgrade — But We Can Still Help You Find Your Next Home.";
-      showSheetMessage(`Redirecting you to Luxury Apartment Listings in ${city}.`);
+      sheetTitle.textContent = "We Couldn’t Complete Your Upgrade Yet.";
+      showSheetMessage(`Returning you to your RentReady results. You can retry Luxury Apartment Listings for ${city} when you’re ready.`);
       sheetConfirm.textContent = originalConfirmText;
       sheetConfirm.disabled = false;
       sheetConfirm.dataset.busy = '0';
+      sheetConfirm.dataset.target = resultsUrl();
       sheetScrim.classList.add('auto-redirect');
       sheetScrim.classList.add('open');
       setTimeout(() => {
-        try { rrnGrantFlowAccess('apartment-list', { status: 'upsell-declined', category: APARTMENT_CATEGORY, city: city }); } catch (_e) {}
-        window.location.href = realEstateListUrl();
+        window.location.href = resultsUrl();
       }, 1800);
     }
 
@@ -834,9 +834,10 @@
     function resetSheetMessage() {
       if (sheetConfirm.dataset.busy === '1') return;
       sheetScrim.classList.remove('auto-redirect');
-      sheetTitle.textContent = "We Couldn’t Complete Your Upgrade — But We Can Still Help You Find Your Next Home.";
-      sheetSub.textContent = `Redirecting you to Luxury Apartment Listings in ${selectedCity()}.`;
+      sheetTitle.textContent = "We Couldn’t Complete Your Upgrade Yet.";
+      sheetSub.textContent = `Returning you to your RentReady results. You can retry Luxury Apartment Listings in ${selectedCity()} when you’re ready.`;
       sheetConfirm.textContent = originalConfirmText;
+      delete sheetConfirm.dataset.target;
     }
 
     function selectedCity() {
@@ -851,6 +852,10 @@
     function realEstateListUrl() {
       const params = new URLSearchParams({ category: APARTMENT_CATEGORY, city: selectedCity() });
       return '/Real-estate%20list.html?' + params.toString();
+    }
+
+    function resultsUrl() {
+      return '/After%20Payment%20Results.html';
     }
   </script>
 
