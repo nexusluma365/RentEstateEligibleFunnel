@@ -214,6 +214,17 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
     return data;
   }
 
+  async function createPrescreenIntent(answers){
+    var intent = await fetchJson('/.netlify/functions/create-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId: answers.lead_id, email: answers.email || '', answers: answers }),
+    });
+    paymentIntentId = intent.paymentIntentId;
+    paymentClientSecret = intent.clientSecret;
+    return intent;
+  }
+
   function grantResultsAccess(){
     try {
       sessionStorage.setItem(FLOW_ACCESS_KEY, JSON.stringify({
@@ -257,22 +268,18 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
     hydrateSummary(answers);
 
     try {
-      var ent = await fetchJson('/.netlify/functions/get-entitlements?leadId=' + encodeURIComponent(answers.lead_id));
-      if (ent && ent.paid10) {
-        grantResultsAccess();
-        window.location.href = RESULTS_URL;
-        return;
+      try {
+        var ent = await fetchJson('/.netlify/functions/get-entitlements?leadId=' + encodeURIComponent(answers.lead_id));
+        if (ent && ent.paid10) {
+          grantResultsAccess();
+          window.location.href = RESULTS_URL;
+          return;
+        }
+      } catch (err) {
+        console.warn('Could not load existing entitlement status', err);
       }
 
       var config = await fetchJson('/.netlify/functions/config');
-      var intent = await fetchJson('/.netlify/functions/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId: answers.lead_id, email: answers.email || '', answers: answers }),
-      });
-
-      paymentIntentId = intent.paymentIntentId;
-      paymentClientSecret = intent.clientSecret;
       stripe = Stripe(config.stripePublishableKey);
       elements = stripe.elements({
         fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap' }],
@@ -309,12 +316,16 @@ h2{font-size:24px;line-height:1.1;margin-bottom:12px}
     var err = document.getElementById('paymentError');
     var nameInput = document.getElementById('billingName');
     var zipInput = document.getElementById('billingZip');
-    if (!stripe || !cardNumber || !paymentClientSecret || !answers.lead_id || btn.disabled) return;
+    if (!stripe || !cardNumber || !answers.lead_id || btn.disabled) return;
     err.classList.remove('show');
     btn.disabled = true;
-    btn.textContent = 'Confirming payment...';
+    btn.textContent = 'Starting secure checkout...';
 
     try {
+      if (!paymentClientSecret) {
+        await createPrescreenIntent(answers);
+      }
+      btn.textContent = 'Confirming payment...';
       var result = await stripe.confirmCardPayment(
         paymentClientSecret,
         {
