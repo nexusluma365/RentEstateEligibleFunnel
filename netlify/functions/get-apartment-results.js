@@ -133,7 +133,13 @@ async function fetchGooglePlaces(criteria) {
   for (const query of googlePlaceQueries(criteria)) {
     const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
     url.searchParams.set('query', query);
-    url.searchParams.set('type', 'real_estate_agency');
+    // NOTE: intentionally no `type` param. Google's `type` filter is a hard
+    // restriction, not a relevance hint, and apartment communities are almost
+    // never tagged `real_estate_agency` (that type is for leasing/realtor
+    // offices). Setting it here silently filtered out nearly every real
+    // apartment complex. The query text itself ("apartments in <city>",
+    // "apartment communities in <city>") already steers Text Search toward
+    // the right category.
     url.searchParams.set('key', key);
 
     const resp = await fetch(url);
