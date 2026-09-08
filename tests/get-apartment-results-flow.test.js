@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-async function loadHandler({ lead, entitlements }) {
+async function loadHandler({ lead, entitlements, cached }) {
   const storePath = require.resolve('../netlify/functions/_lib/store');
   const signPath = require.resolve('../netlify/functions/_lib/sign');
   const fnPath = require.resolve('../netlify/functions/get-apartment-results');
@@ -14,7 +14,7 @@ async function loadHandler({ lead, entitlements }) {
     exports: {
       getLead: async () => lead,
       getEntitlements: async () => entitlements,
-      getApartmentResults: async () => null,
+      getApartmentResults: async () => cached || null,
       saveApartmentResults: async (leadId, category, results) => savedResults.push({ leadId, category, results }),
     },
   };
@@ -89,6 +89,18 @@ async function run() {
       entitlements: {
         paid27: true,
         purchasedCategory: 'luxury',
+      },
+      cached: {
+        provider: 'google_places',
+        criteria: { category: 'luxury', city: 'Concord, NC', rentBudget: 1600, bedrooms: 1 },
+        properties: [
+          {
+            propertyId: 'old_demo',
+            name: 'Skyline House Uptown',
+            phone: '(704) 555-0188',
+            website: 'https://example.com/skyline-house',
+          },
+        ],
       },
     });
 

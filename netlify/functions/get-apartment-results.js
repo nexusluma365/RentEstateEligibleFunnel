@@ -40,13 +40,13 @@ exports.handler = async (event) => {
       return json(403, { ok: false, error: 'This apartment list is not unlocked yet.' });
     }
 
-    const cached = await getApartmentResults(leadId, category);
-    if (cached) return json(200, { ok: true, ...cached });
-
     const lead = await getLead(leadId);
     if (!lead) return json(404, { ok: false, error: 'No saved questionnaire was found.' });
 
     const criteria = buildCriteria(lead, category);
+    const cached = await getApartmentResults(leadId, category);
+    if (isUsableCachedResult(cached, criteria)) return json(200, { ok: true, ...cached });
+
     const rawProperties = await fetchGooglePlaces(criteria);
     if (!rawProperties.length) {
       const empty = {
@@ -224,6 +224,19 @@ function defaultRank(properties, criteria) {
   return properties
     .map((p) => (p.matchReasons && p.matchReasons.length && p.summary ? p : { ...p, ...scoreProperty(p, criteria) }))
     .sort((a, b) => b.matchScore - a.matchScore);
+}
+
+function isUsableCachedResult(cached, criteria) {
+  if (!cached || cached.provider !== 'google_places') return false;
+  if (!cached.criteria || cached.criteria.category !== criteria.category || cached.criteria.city !== criteria.city) return false;
+  if (Number(cached.criteria.rentBudget || 0) !== Number(criteria.rentBudget || 0)) return false;
+  if (Number(cached.criteria.bedrooms ?? -1) !== Number(criteria.bedrooms ?? -1)) return false;
+  const properties = Array.isArray(cached.properties) ? cached.properties : [];
+  return properties.every((property) => {
+    const website = String(property.website || '');
+    const phone = String(property.phone || '');
+    return !website.includes('example.com') && !/555-0\d{3}|555\d{4}/.test(phone);
+  });
 }
 
 function buildCriteria(lead, category) {

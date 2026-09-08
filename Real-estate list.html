@@ -449,6 +449,7 @@ let criteria = {
 
 let currentResults = [];
 let serverResults = null;
+let serverLoadMessage = "";
 const bedroomLabel = n => n === 0 ? "Studio" : (n >= 4 ? "4+ Bedrooms" : n + (n===1?" Bedroom":" Bedrooms"));
 const money = n => "$" + n.toLocaleString("en-US");
 
@@ -562,7 +563,11 @@ function currentCategory(){
 
 async function loadVerifiedApartmentResults(){
   const answers = readAnswers();
-  if (!answers.lead_id) return;
+  if (!answers.lead_id) {
+    serverResults = [];
+    serverLoadMessage = "No saved questionnaire was found for this apartment search.";
+    return;
+  }
   try {
     const res = await fetch(`/.netlify/functions/get-apartment-results?leadId=${encodeURIComponent(answers.lead_id)}&category=${encodeURIComponent(currentCategory())}`);
     const data = await res.json().catch(()=>({}));
@@ -575,12 +580,14 @@ async function loadVerifiedApartmentResults(){
       criteria.bedrooms = normalizeBedrooms(data.criteria.bedrooms);
     }
     serverResults = Array.isArray(data.properties) ? data.properties.map(serverPropertyToResult) : [];
+    serverLoadMessage = data.message || "";
     if (data.message) {
       document.getElementById("heroSub").textContent = data.message;
     }
   } catch (err) {
-    console.warn("Using local apartment fallback", err);
-    serverResults = null;
+    console.warn("Verified apartment results unavailable", err);
+    serverResults = [];
+    serverLoadMessage = err.message || "Verified apartment results could not be loaded right now.";
   }
 }
 
@@ -598,6 +605,7 @@ function serverPropertyToResult(property){
     rating: typeof property.rating === "number" ? property.rating : null,
     reviewCount: typeof property.reviewCount === "number" ? property.reviewCount : 0,
     photo: property.image,
+    locationLabel: property.address || criteria.city,
     style: criteria.style,
     highRise: false,
     bedroomsOffered: [criteria.bedrooms],
@@ -618,7 +626,7 @@ function serverPropertyToResult(property){
       locationSummary: property.address ? `Located near ${property.address}.` : `Located around ${criteria.city}.`,
       bestFor: property.summary || `Best for renters searching for ${criteria.style.toLowerCase()} apartments in ${criteria.city}.`,
       potentialTradeoff: property.availabilityNote || "Confirm current availability directly with the property.",
-      tags: [criteria.style, criteria.city, property.source || "Google Places"].filter(Boolean).slice(0,4),
+      tags: [criteria.style, criteria.city, property.website ? "Website available" : "", property.source || "Google Places"].filter(Boolean).slice(0,4),
     },
   };
 }
@@ -646,8 +654,8 @@ function callLineHtml(apt){
 }
 function actionButtonsHtml(apt){
   const secondary = apt.phone
-    ? (apt.website ? `<a class="btn btn-secondary" href="${apt.website}" target="_blank" rel="noopener">${ICONS.globe} Website</a>` : `<a class="btn btn-secondary" href="${apt.mapsUrl}" target="_blank" rel="noopener">${ICONS.map} Maps</a>`)
-    : (apt.website ? `<a class="btn btn-primary" href="${apt.website}" target="_blank" rel="noopener">${ICONS.globe} Visit website</a>` : `<a class="btn btn-primary" href="${apt.mapsUrl}" target="_blank" rel="noopener">${ICONS.map} View on maps</a>`);
+    ? (apt.website ? `<a class="btn btn-secondary" href="${apt.website}" target="_blank" rel="noopener">${ICONS.globe} Check availability</a>` : `<a class="btn btn-secondary" href="${apt.mapsUrl}" target="_blank" rel="noopener">${ICONS.map} Maps</a>`)
+    : (apt.website ? `<a class="btn btn-primary" href="${apt.website}" target="_blank" rel="noopener">${ICONS.globe} Check availability</a>` : `<a class="btn btn-primary" href="${apt.mapsUrl}" target="_blank" rel="noopener">${ICONS.map} View on maps</a>`);
   return `<div class="listing-actions">
       <button class="btn btn-primary" onclick="openPropertyModal('${apt.id}')">View apartment</button>
       ${secondary}
@@ -667,7 +675,7 @@ function listingHtml(result, index, isTop){
         </div>
         <span class="match-badge">${rr.matchScore}% match</span>
       </div>
-      <div class="listing-loc">${ICONS.pin} ${apt.area}, Charlotte NC ${ratingHtml(apt)}</div>
+      <div class="listing-loc">${ICONS.pin} ${apt.locationLabel || apt.address || apt.area} ${ratingHtml(apt)}</div>
       <p class="listing-reason">${rr.matchReason}</p>
       <div class="listing-tags">${rr.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
       <div><span class="pricing-note">${ICONS.warn} Check current availability</span></div>
@@ -684,7 +692,7 @@ function renderHeroAndSummary(){
   document.getElementById("scStyle").textContent = criteria.style;
   document.getElementById("scBudget").textContent = "Up to " + money(criteria.budgetMax);
   document.getElementById("scBedrooms").textContent = bedroomLabel(criteria.bedrooms);
-  document.getElementById("heroSub").textContent = `${currentResults.length} apartment communities in ${criteria.area === "Any area in Charlotte" ? "Charlotte" : criteria.area} match your ${criteria.style.toLowerCase()}, ${bedroomLabel(criteria.bedrooms).toLowerCase()} search.`;
+  document.getElementById("heroSub").textContent = serverLoadMessage || `${currentResults.length} verified apartment communities in ${criteria.city} match your ${criteria.style.toLowerCase()}, ${bedroomLabel(criteria.bedrooms).toLowerCase()} search.`;
 }
 
 function levelWord(v){ return v >= 80 ? "Excellent" : v >= 60 ? "Strong" : v >= 40 ? "Good" : "Limited"; }
@@ -807,7 +815,7 @@ function openPropertyModal(id){
   if(!result) return;
   const { verified: apt, rentReady: rr } = result;
   const webBtn = apt.website
-    ? `<a class="btn btn-secondary" href="${apt.website}" target="_blank" rel="noopener">${ICONS.globe} Visit property website</a>`
+    ? `<a class="btn btn-secondary" href="${apt.website}" target="_blank" rel="noopener">${ICONS.globe} Check availability</a>`
     : `<span class="btn btn-secondary" style="opacity:.5; pointer-events:none;">${ICONS.globe} No website listed</span>`;
   const callBlock = apt.phone
     ? `<div class="modal-call">${ICONS.phone} <span>Call to schedule a tour: <a class="num" href="tel:${apt.phone}">${apt.phoneDisplay}</a></span></div>`
