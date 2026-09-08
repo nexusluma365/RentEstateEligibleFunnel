@@ -10,44 +10,52 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--green:#174b33;--green-2:#1f6a46;--accent:#56b07a;--bg:#f7faf7;--text:#174b33;--muted:#66766c;--line:#dce5df;--soft:#eef6f1;--panel:#fbfdfb;--font:-apple-system,BlinkMacSystemFont,'DM Sans','Helvetica Neue',sans-serif}
 html,body{min-height:100%;max-width:100%;font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:hidden}
-body{padding:28px}
-.page{min-height:calc(100dvh - 56px);background:#fff;border:1px solid #e4ece7;box-shadow:0 24px 70px rgba(23,75,51,.08);display:flex;flex-direction:column}
-.nav{display:flex;align-items:center;justify-content:space-between;width:min(100%,1420px);margin:0 auto;padding:34px 56px 20px}
+body{padding:24px}
+.page{min-height:calc(100dvh - 48px);background:#fff;border:1px solid #e4ece7;box-shadow:0 24px 70px rgba(23,75,51,.08);display:flex;flex-direction:column}
+.nav{display:flex;align-items:center;justify-content:space-between;width:min(100%,1320px);margin:0 auto;padding:28px 44px 16px}
 .brand,.secure{display:flex;align-items:center;gap:12px;font-weight:800;color:var(--green)}
 .brand-mark{width:38px;height:38px;border-radius:10px;background:var(--green);display:grid;place-items:center;color:#fff}
 .brand-mark svg,.secure svg{width:19px;height:19px;stroke:currentColor;fill:none}
 .secure{font-size:15px;color:var(--muted)}
-.progress{display:flex;align-items:center;justify-content:center;gap:18px;padding:52px 24px 62px;font-weight:800;font-size:21px;color:var(--green)}
+.progress{display:flex;align-items:center;justify-content:center;gap:18px;padding:34px 24px 46px;font-weight:800;font-size:18px;color:var(--green)}
 .step{display:flex;align-items:center;gap:14px;white-space:nowrap}
 .progress .dot{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;background:var(--soft);color:var(--accent)}
 .progress .dot.active{background:var(--accent);color:#fff}
-.progress .bar{width:110px;height:5px;border-radius:999px;background:var(--accent)}
-.content{width:min(100%,1240px);max-width:100%;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,430px);gap:54px;align-items:start;padding:0 48px 56px}
-.main{padding-top:18px}
-h1{font-size:clamp(38px,4.4vw,58px);line-height:1.04;letter-spacing:0;font-weight:900;margin-bottom:28px;max-width:760px;overflow-wrap:break-word}
-.lead-kicker{font-size:21px;font-weight:800;line-height:1.35;color:var(--green);margin-bottom:18px;overflow-wrap:break-word}
-.lead{font-size:20px;line-height:1.55;color:var(--muted);max-width:760px;margin-bottom:0;overflow-wrap:break-word}
-.rule{border:0;border-top:1px solid var(--line);margin:42px 0 34px;max-width:760px}
-h2{font-size:28px;line-height:1.1;margin-bottom:16px}
-.copy{font-size:17px;line-height:1.55;color:var(--muted);max-width:760px;margin-bottom:22px;overflow-wrap:break-word}
+.progress .bar{width:96px;height:4px;border-radius:999px;background:var(--accent)}
+.content{width:min(100%,1160px);max-width:100%;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,400px);gap:48px;align-items:start;padding:0 44px 52px}
+.main{padding-top:8px}
+h1{font-size:clamp(32px,3.35vw,44px);line-height:1.08;letter-spacing:0;font-weight:900;margin-bottom:22px;max-width:650px;overflow-wrap:break-word}
+.lead-kicker{font-size:19px;font-weight:800;line-height:1.35;color:var(--green);margin-bottom:14px;overflow-wrap:break-word}
+.lead{font-size:17px;line-height:1.5;color:var(--muted);max-width:650px;margin-bottom:0;overflow-wrap:break-word}
+.rule{border:0;border-top:1px solid var(--line);margin:30px 0 26px;max-width:650px}
+h2{font-size:24px;line-height:1.1;margin-bottom:12px}
+.copy{font-size:15px;line-height:1.55;color:var(--muted);max-width:650px;margin-bottom:20px;overflow-wrap:break-word}
 .field-label{display:block;font-size:14px;font-weight:800;color:var(--muted);margin-bottom:10px}
-.payment-box{width:100%;max-width:760px;min-height:112px;border:1.5px solid var(--line);border-radius:8px;padding:18px;background:var(--panel);box-shadow:inset 0 1px 0 rgba(255,255,255,.75)}
-.next-step{max-width:760px;margin-top:34px;padding-top:32px;border-top:1px solid var(--line)}
-.cta{width:min(100%,520px);height:62px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:18px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 10px 24px rgba(86,176,122,.2);transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+.payment-form{width:100%;max-width:650px;display:grid;gap:14px}
+.card-field{height:52px;border:1.5px solid var(--line);border-radius:8px;background:#fff;padding:15px 17px;display:flex;align-items:center;box-shadow:0 1px 0 rgba(23,75,51,.03)}
+.card-field.is-focused{border-color:rgba(86,176,122,.9);box-shadow:0 0 0 3px rgba(86,176,122,.13)}
+.card-field.is-invalid{border-color:#b85b52}
+.payment-grid{display:grid;grid-template-columns:1fr 1fr 126px;gap:14px}
+.billing-grid{display:grid;grid-template-columns:1fr 180px;gap:14px}
+.billing-input,.country-field{width:100%;height:52px;border:1.5px solid var(--line);border-radius:8px;background:#fff;padding:0 17px;font:600 15px var(--font);color:var(--text);box-shadow:0 1px 0 rgba(23,75,51,.03)}
+.billing-input:focus{outline:0;border-color:rgba(86,176,122,.9);box-shadow:0 0 0 3px rgba(86,176,122,.13)}
+.country-field{display:flex;align-items:center;color:var(--muted)}
+.next-step{max-width:650px;margin-top:22px;padding-top:24px;border-top:1px solid var(--line)}
+.cta{width:min(100%,480px);height:58px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:17px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 10px 24px rgba(86,176,122,.2);transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
 .cta:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 14px 30px rgba(86,176,122,.24);background:#4ca66f}
 .cta:disabled{opacity:.7;cursor:not-allowed;box-shadow:none}
 .error{display:none;color:#a63b32;font-size:14px;line-height:1.45;margin-top:14px}
 .error.show{display:block}
 .summary{min-width:0;border:1px solid var(--line);border-radius:8px;align-self:start;overflow:hidden;background:#fff;box-shadow:0 18px 46px rgba(23,75,51,.09)}
-.summary-head{background:var(--green);color:#fff;padding:34px 30px 36px}
+.summary-head{background:var(--green);color:#fff;padding:30px 28px 32px}
 .summary-head p{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;opacity:.72;margin-bottom:14px}
-.summary-head h2{font-size:31px;color:#fff;margin:0;line-height:1.08}
-.summary-body{padding:30px}
+.summary-head h2{font-size:28px;color:#fff;margin:0;line-height:1.08}
+.summary-body{padding:28px}
 .line-item{display:flex;align-items:center;justify-content:space-between;gap:24px;min-width:0;padding-bottom:24px;border-bottom:1px solid var(--line)}
 .line-item > div:first-child{min-width:0}
 .line-item strong{display:block;font-size:18px;margin-bottom:4px}
 .line-item span{color:var(--muted);font-size:15px}
-.price{font-size:36px;font-weight:900;color:var(--green)}
+.price{font-size:34px;font-weight:900;color:var(--green)}
 .benefits{display:grid;gap:18px;padding:28px 0;border-bottom:1px solid var(--line)}
 .benefit{display:grid;grid-template-columns:28px minmax(0,1fr);gap:14px;align-items:start;color:var(--muted);font-size:16px;font-weight:700;line-height:1.42}
 .benefit b{width:24px;height:24px;border-radius:50%;background:rgba(86,176,122,.13);color:var(--accent);display:grid;place-items:center;font-size:14px;line-height:1;margin-top:1px}
@@ -57,8 +65,8 @@ h2{font-size:28px;line-height:1.1;margin-bottom:16px}
 .mini-row:last-child{border-bottom:0}
 .mini-row strong{color:var(--green);text-align:right;overflow-wrap:anywhere}
 .disclaimer{font-size:12px;line-height:1.5;color:#9aaa9f;margin-top:26px}
-@media(max-width:1100px){.content{grid-template-columns:minmax(0,1fr) 390px;gap:34px;padding-inline:32px}h1{font-size:44px}.progress{font-size:18px}.progress .bar{width:70px}}
-@media(max-width:860px){body{padding:0}.page{width:100%;min-height:100dvh;border:0;overflow:hidden}.nav{padding:24px 20px}.secure span{display:none}.progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;font-size:12px;padding:24px 20px 34px}.step{min-width:0;flex-direction:column;gap:8px;text-align:center;white-space:normal;line-height:1.15}.progress .bar{display:none}.progress .dot{width:34px;height:34px;flex-basis:34px;margin:0 auto}.content{width:100%;grid-template-columns:minmax(0,1fr);padding:0 20px 34px;gap:30px}.main{min-width:0;padding-top:0}h1{max-width:100%;font-size:31px;line-height:1.08}.lead,.lead-kicker{max-width:100%;font-size:17px}.summary{width:100%}.summary-head{padding:28px 28px 30px}.summary-head h2{font-size:28px}.summary-body{padding:26px}.line-item{gap:14px}.price{font-size:32px}.benefit{font-size:15px}.cta{width:100%}}
+@media(max-width:1100px){.content{grid-template-columns:minmax(0,1fr) 370px;gap:32px;padding-inline:32px}h1{font-size:38px}.progress{font-size:16px}.progress .bar{width:62px}}
+@media(max-width:860px){body{padding:0}.page{width:100%;min-height:100dvh;border:0;overflow:hidden}.nav{padding:24px 20px}.secure span{display:none}.progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;font-size:12px;padding:24px 20px 34px}.step{min-width:0;flex-direction:column;gap:8px;text-align:center;white-space:normal;line-height:1.15}.progress .bar{display:none}.progress .dot{width:34px;height:34px;flex-basis:34px;margin:0 auto}.content{width:100%;grid-template-columns:minmax(0,1fr);padding:0 20px 34px;gap:30px}.main{min-width:0;padding-top:0}h1{max-width:100%;font-size:29px;line-height:1.08}.lead,.lead-kicker{max-width:100%;font-size:16px}.payment-grid,.billing-grid{grid-template-columns:1fr}.summary{width:100%}.summary-head{padding:28px 28px 30px}.summary-head h2{font-size:28px}.summary-body{padding:26px}.line-item{gap:14px}.price{font-size:32px}.benefit{font-size:15px}.cta{width:100%}}
 </style>
 </head>
 <body>
@@ -88,13 +96,39 @@ h2{font-size:28px;line-height:1.1;margin-bottom:16px}
 
       <h2>Payment details</h2>
       <p class="copy">Your questionnaire is complete. Enter your payment details to unlock your personalized review.</p>
-      <label class="field-label">Credit card details</label>
-      <div class="payment-box" id="paymentElement"></div>
+      <div class="payment-form">
+        <div>
+          <label class="field-label" for="cardNumber">Credit card number</label>
+          <div class="card-field" id="cardNumber"></div>
+        </div>
+        <div class="payment-grid">
+          <div>
+            <label class="field-label" for="cardExpiry">Expiration date</label>
+            <div class="card-field" id="cardExpiry"></div>
+          </div>
+          <div>
+            <label class="field-label" for="cardCvc">CVC</label>
+            <div class="card-field" id="cardCvc"></div>
+          </div>
+          <div>
+            <label class="field-label" for="billingZip">ZIP</label>
+            <input class="billing-input" id="billingZip" name="postal_code" type="text" inputmode="numeric" autocomplete="postal-code">
+          </div>
+        </div>
+        <div class="billing-grid">
+          <div>
+            <label class="field-label" for="billingName">Name on card</label>
+            <input class="billing-input" id="billingName" name="cc-name" type="text" autocomplete="cc-name">
+          </div>
+          <div>
+            <span class="field-label">Country</span>
+            <div class="country-field">United States</div>
+          </div>
+        </div>
+      </div>
       <p class="error" id="paymentError"></p>
 
       <div class="next-step">
-        <h2>Your next step</h2>
-        <p class="copy">Before you start paying application fees, see what your current rental profile may be telling property managers and what you can prepare next.</p>
         <button class="cta" id="payBtn" type="button" disabled>Continue With RentReady <span>→</span></button>
       </div>
     </section>
@@ -137,7 +171,11 @@ h2{font-size:28px;line-height:1.1;margin-bottom:16px}
   var START_URL = '/Renter%20LeadForm.html';
   var stripe = null;
   var elements = null;
+  var cardNumber = null;
+  var cardExpiry = null;
+  var cardCvc = null;
   var paymentIntentId = '';
+  var paymentClientSecret = '';
 
   function readAnswers(){
     try { return JSON.parse(sessionStorage.getItem(ANSWERS_STORAGE_KEY) || localStorage.getItem(ANSWERS_STORAGE_KEY) || '{}') || {}; }
@@ -152,6 +190,18 @@ h2{font-size:28px;line-height:1.1;margin-bottom:16px}
     var el = document.getElementById('paymentError');
     el.textContent = message || 'Could not start checkout.';
     el.classList.add('show');
+  }
+
+  function bindElementState(element, id){
+    var wrapper = document.getElementById(id);
+    if (!wrapper) return;
+    element.on('focus', function(){ wrapper.classList.add('is-focused'); });
+    element.on('blur', function(){ wrapper.classList.remove('is-focused'); });
+    element.on('change', function(event){
+      wrapper.classList.toggle('is-invalid', !!event.error);
+      if (event.error) showError(event.error.message);
+      else document.getElementById('paymentError').classList.remove('show');
+    });
   }
 
   async function fetchJson(url, options){
@@ -219,9 +269,30 @@ h2{font-size:28px;line-height:1.1;margin-bottom:16px}
       });
 
       paymentIntentId = intent.paymentIntentId;
+      paymentClientSecret = intent.clientSecret;
       stripe = Stripe(config.stripePublishableKey);
-      elements = stripe.elements({ clientSecret: intent.clientSecret });
-      elements.create('payment').mount('#paymentElement');
+      elements = stripe.elements({
+        fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap' }],
+      });
+      var cardStyle = {
+        base: {
+          color: '#174b33',
+          fontFamily: '"DM Sans", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif',
+          fontSize: '16px',
+          fontWeight: '600',
+          '::placeholder': { color: '#97a69d' },
+        },
+        invalid: { color: '#a63b32' },
+      };
+      cardNumber = elements.create('cardNumber', { style: cardStyle, placeholder: '1234 1234 1234 1234' });
+      cardExpiry = elements.create('cardExpiry', { style: cardStyle });
+      cardCvc = elements.create('cardCvc', { style: cardStyle });
+      cardNumber.mount('#cardNumber');
+      cardExpiry.mount('#cardExpiry');
+      cardCvc.mount('#cardCvc');
+      bindElementState(cardNumber, 'cardNumber');
+      bindElementState(cardExpiry, 'cardExpiry');
+      bindElementState(cardCvc, 'cardCvc');
       btn.disabled = false;
     } catch (err) {
       btn.disabled = true;
@@ -233,13 +304,30 @@ h2{font-size:28px;line-height:1.1;margin-bottom:16px}
     var answers = readAnswers();
     var btn = document.getElementById('payBtn');
     var err = document.getElementById('paymentError');
-    if (!stripe || !elements || !paymentIntentId || !answers.lead_id || btn.disabled) return;
+    var nameInput = document.getElementById('billingName');
+    var zipInput = document.getElementById('billingZip');
+    if (!stripe || !cardNumber || !paymentClientSecret || !answers.lead_id || btn.disabled) return;
     err.classList.remove('show');
     btn.disabled = true;
     btn.textContent = 'Confirming payment...';
 
     try {
-      var result = await stripe.confirmPayment({ elements: elements, redirect: 'if_required' });
+      var result = await stripe.confirmCardPayment(
+        paymentClientSecret,
+        {
+          payment_method: {
+            card: cardNumber,
+            billing_details: {
+              name: (nameInput && nameInput.value) || [answers.first_name, answers.last_name].filter(Boolean).join(' ') || undefined,
+              email: answers.email || undefined,
+              address: {
+                postal_code: (zipInput && zipInput.value) || undefined,
+                country: 'US',
+              },
+            },
+          },
+        }
+      );
       if (result.error) throw new Error(result.error.message || 'Payment was not completed.');
       var confirmed = await fetchJson('/.netlify/functions/confirm-intent', {
         method: 'POST',
