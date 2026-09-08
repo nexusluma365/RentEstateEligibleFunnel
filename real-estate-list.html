@@ -575,8 +575,12 @@ async function loadVerifiedApartmentResults(){
       const upsellIntentId = rrnApartmentPaymentIntentId(category);
       if (upsellIntentId) params.set("upsellPaymentIntentId", upsellIntentId);
     }
-    const res = await fetch(`/.netlify/functions/get-apartment-results?${params.toString()}`);
-    const data = await res.json().catch(()=>({}));
+    let res = await fetch(`/.netlify/functions/get-apartment-results?${params.toString()}`);
+    let data = await res.json().catch(()=>({}));
+    if (res.status === 404 && data.error === "No saved questionnaire was found." && await resyncSavedQuestionnaire(answers)) {
+      res = await fetch(`/.netlify/functions/get-apartment-results?${params.toString()}`);
+      data = await res.json().catch(()=>({}));
+    }
     if (!res.ok || !data.ok) throw new Error(data.error || "Could not load apartment results.");
     if (data.criteria) {
       criteria.city = data.criteria.city || criteria.city;
@@ -594,6 +598,20 @@ async function loadVerifiedApartmentResults(){
     console.warn("Verified apartment results unavailable", err);
     serverResults = [];
     serverLoadMessage = err.message || "Verified apartment results could not be loaded right now.";
+  }
+}
+
+async function resyncSavedQuestionnaire(answers){
+  try {
+    const res = await fetch("/.netlify/functions/submit-lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(answers),
+    });
+    const data = await res.json().catch(()=>({}));
+    return !!(res.ok && data && data.saved);
+  } catch (_e) {
+    return false;
   }
 }
 

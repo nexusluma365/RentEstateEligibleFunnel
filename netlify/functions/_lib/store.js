@@ -3,10 +3,10 @@
 // entitlement on its own, it only asks these stores.
 //
 // Three logical stores, all backed by Netlify Blobs:
-//   "leads"        — the questionnaire answers, saved server-side the
-//                     moment we create the $10 PaymentIntent, so every
-//                     later function can trust the answers instead of
-//                     re-trusting whatever the browser sends.
+//   "leads"        — the questionnaire answers, saved server-side when
+//                     the lead form is submitted and refreshed when the
+//                     $10 PaymentIntent is created, so later functions can
+//                     trust stored answers instead of browser-sent data.
 //   "entitlements" — { paid10, paid27, paid97, membershipStatus,
 //                     membershipPlan, stripeCustomerId,
 //                     defaultPaymentMethodId, ... } keyed by leadId.
