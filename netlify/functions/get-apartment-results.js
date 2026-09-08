@@ -6,6 +6,7 @@
 // rank/summarize verified properties; it never creates property facts.
 const { getLead, getEntitlements, getApartmentResults, saveApartmentResults } = require('./_lib/store');
 const { verify } = require('./_lib/sign');
+const { getStripe } = require('./_lib/stripe');
 
 const VALID_CATEGORIES = new Set(['modern', 'luxury']);
 const FALLBACK_IMAGES = {
@@ -22,6 +23,7 @@ exports.handler = async (event) => {
   const q = event.queryStringParameters || {};
   let leadId = q.leadId;
   let category = (q.category || '').toLowerCase();
+  const upsellPaymentIntentId = q.upsellPaymentIntentId || '';
   if (q.token) {
     const data = verify(q.token);
     if (!data || data.product !== 'apartment-results') {
@@ -35,7 +37,10 @@ exports.handler = async (event) => {
   }
 
   try {
-    const entitlements = await getEntitlements(leadId);
+    let entitlements = await getEntitlements(leadId);
+    if ((!entitlements.paid27 || entitlements.purchasedCategory !== category) && upsellPaymentIntentId) {
+      entitlements = await recoverApartmentEntitlement(leadId, category, upsellPaymentIntentId, entitlements);
+    }
     if (!entitlements.paid27 || entitlements.purchasedCategory !== category) {
       return json(403, { ok: false, error: 'This apartment list is not unlocked yet.' });
     }
@@ -70,6 +75,33 @@ exports.handler = async (event) => {
     return json(500, { ok: false, error: 'Could not load apartment results right now.' });
   }
 };
+
+async function recoverApartmentEntitlement(leadId, category, paymentIntentId, current) {
+  let pi;
+  try {
+    pi = await getStripe().paymentIntents.retrieve(paymentIntentId);
+  } catch (err) {
+    console.warn('apartment entitlement recovery lookup failed', err.code || err.message);
+    return current;
+  }
+
+  const metadata = pi.metadata || {};
+  if (pi.status !== 'succeeded' || metadata.leadId !== leadId || metadata.product !== category) {
+    return current;
+  }
+
+  const patch = { paid27: true, purchasedCategory: category };
+  if (pi.customer) patch.stripeCustomerId = pi.customer;
+  if (pi.payment_method) patch.defaultPaymentMethodId = pi.payment_method;
+
+  try {
+    const { patchEntitlements } = require('./_lib/store');
+    return await patchEntitlements(leadId, patch);
+  } catch (err) {
+    console.error('apartment entitlement recovery save failed', err);
+    return { ...current, ...patch, leadId };
+  }
+}
 
 async function fetchGooglePlaces(criteria) {
   const key = process.env.GOOGLE_PLACES_API_KEY;

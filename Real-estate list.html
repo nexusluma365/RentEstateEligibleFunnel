@@ -391,7 +391,7 @@ async function confirmListingAccess(){
   }
 
   return !!(window.rrnHasRecentFlowAccess && rrnHasRecentFlowAccess("apartment-list", {
-    statuses: ["upsell-success", "upsell-declined"],
+    statuses: ["upsell-success"],
     category,
   }));
 }
@@ -569,7 +569,13 @@ async function loadVerifiedApartmentResults(){
     return;
   }
   try {
-    const res = await fetch(`/.netlify/functions/get-apartment-results?leadId=${encodeURIComponent(answers.lead_id)}&category=${encodeURIComponent(currentCategory())}`);
+    const category = currentCategory();
+    const params = new URLSearchParams({ leadId: answers.lead_id, category });
+    if (window.rrnApartmentPaymentIntentId) {
+      const upsellIntentId = rrnApartmentPaymentIntentId(category);
+      if (upsellIntentId) params.set("upsellPaymentIntentId", upsellIntentId);
+    }
+    const res = await fetch(`/.netlify/functions/get-apartment-results?${params.toString()}`);
     const data = await res.json().catch(()=>({}));
     if (!res.ok || !data.ok) throw new Error(data.error || "Could not load apartment results.");
     if (data.criteria) {

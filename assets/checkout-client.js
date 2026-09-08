@@ -14,6 +14,7 @@
 const ANSWERS_KEY = 'rrn_answers_v1';
 const FLOW_ACCESS_KEY = 'rrn_flow_access_v1';
 const PRESCREEN_INTENT_KEY = 'rrn_prescreen_payment_intent_v1';
+const APARTMENT_INTENT_KEY = 'rrn_apartment_payment_intent_v1';
 const FLOW_ACCESS_TTL_MS = 20 * 60 * 1000;
 let rrnConfigPromise = null;
 
@@ -59,6 +60,25 @@ function rrnNewIdempotencyKey() {
 function rrnPrescreenPaymentIntentId() {
   try {
     return sessionStorage.getItem(PRESCREEN_INTENT_KEY) || localStorage.getItem(PRESCREEN_INTENT_KEY) || null;
+  } catch (_e) {
+    return null;
+  }
+}
+
+function rrnRememberApartmentPaymentIntent(product, paymentIntentId) {
+  if (!product || !paymentIntentId) return;
+  try {
+    const current = JSON.parse(sessionStorage.getItem(APARTMENT_INTENT_KEY) || localStorage.getItem(APARTMENT_INTENT_KEY) || '{}') || {};
+    current[product] = paymentIntentId;
+    sessionStorage.setItem(APARTMENT_INTENT_KEY, JSON.stringify(current));
+    localStorage.setItem(APARTMENT_INTENT_KEY, JSON.stringify(current));
+  } catch (_e) {}
+}
+
+function rrnApartmentPaymentIntentId(product) {
+  try {
+    const current = JSON.parse(sessionStorage.getItem(APARTMENT_INTENT_KEY) || localStorage.getItem(APARTMENT_INTENT_KEY) || '{}') || {};
+    return current[product] || null;
   } catch (_e) {
     return null;
   }
@@ -122,6 +142,9 @@ async function rrnChargeUpsell(product, publishableKey) {
     const stripeKey = await rrnGetStripePublishableKey(publishableKey);
     return await rrnHandleAction(data.clientSecret, leadId, product, stripeKey);
   }
+  if ((data.status === 'succeeded' || data.status === 'processing') && data.paymentIntentId) {
+    rrnRememberApartmentPaymentIntent(product, data.paymentIntentId);
+  }
   return data.status; // 'succeeded' | 'failed' | 'processing'
 }
 
@@ -165,6 +188,7 @@ async function rrnHandleAction(clientSecret, leadId, product, publishableKey) {
   if (result.error) return 'failed';
 
   const stripeSucceeded = result.paymentIntent && result.paymentIntent.status === 'succeeded';
+  if (stripeSucceeded) rrnRememberApartmentPaymentIntent(product, result.paymentIntent.id);
   try {
     const confirmRes = await fetch('/.netlify/functions/confirm-intent', {
       method: 'POST',
@@ -198,6 +222,7 @@ async function rrnEmailAsset(type, category) {
 window.rrnLeadId = rrnLeadId;
 window.rrnNewIdempotencyKey = rrnNewIdempotencyKey;
 window.rrnPrescreenPaymentIntentId = rrnPrescreenPaymentIntentId;
+window.rrnApartmentPaymentIntentId = rrnApartmentPaymentIntentId;
 window.rrnLoadStripeJs = rrnLoadStripeJs;
 window.rrnGetConfig = rrnGetConfig;
 window.rrnGetStripePublishableKey = rrnGetStripePublishableKey;

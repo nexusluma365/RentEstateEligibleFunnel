@@ -91,6 +91,7 @@ async function run() {
   assert.equal(res.statusCode, 200);
   assert.equal(body.ok, true);
   assert.equal(body.status, 'succeeded');
+  assert.equal(body.paymentIntentId, 'pi_upsell');
   assert.deepEqual(retrieveCalls, ['pi_prescreen']);
   assert.equal(createCalls.length, 1);
   assert.equal(createCalls[0].amount, 2700);

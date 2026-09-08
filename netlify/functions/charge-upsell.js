@@ -139,7 +139,7 @@ exports.handler = async (event) => {
         warning = 'Purchase succeeded, but access status could not be saved immediately.';
         console.error('charge-upsell entitlement patch error', err);
       }
-      return { statusCode: 200, body: JSON.stringify({ ok: true, status: 'succeeded', warning }) };
+      return { statusCode: 200, body: JSON.stringify({ ok: true, status: 'succeeded', paymentIntentId: pi.id, warning }) };
     }
 
     if (pi.status === 'requires_action') {

@@ -1,12 +1,14 @@
 const assert = require('assert');
 
-async function loadHandler({ lead, entitlements, cached }) {
+async function loadHandler({ lead, entitlements, cached, upsellIntent, patchEntitlements }) {
   const storePath = require.resolve('../netlify/functions/_lib/store');
   const signPath = require.resolve('../netlify/functions/_lib/sign');
+  const stripePath = require.resolve('../netlify/functions/_lib/stripe');
   const fnPath = require.resolve('../netlify/functions/get-apartment-results');
   delete require.cache[fnPath];
 
   const savedResults = [];
+  const retrieveCalls = [];
   require.cache[storePath] = {
     id: storePath,
     filename: storePath,
@@ -16,6 +18,7 @@ async function loadHandler({ lead, entitlements, cached }) {
       getEntitlements: async () => entitlements,
       getApartmentResults: async () => cached || null,
       saveApartmentResults: async (leadId, category, results) => savedResults.push({ leadId, category, results }),
+      patchEntitlements: patchEntitlements || (async (leadId, patch) => ({ ...entitlements, ...patch, leadId })),
     },
   };
   require.cache[signPath] = {
@@ -24,8 +27,23 @@ async function loadHandler({ lead, entitlements, cached }) {
     loaded: true,
     exports: { verify: () => null },
   };
+  require.cache[stripePath] = {
+    id: stripePath,
+    filename: stripePath,
+    loaded: true,
+    exports: {
+      getStripe: () => ({
+        paymentIntents: {
+          retrieve: async (id) => {
+            retrieveCalls.push(id);
+            return upsellIntent;
+          },
+        },
+      }),
+    },
+  };
 
-  return { handler: require('../netlify/functions/get-apartment-results').handler, savedResults };
+  return { handler: require('../netlify/functions/get-apartment-results').handler, savedResults, retrieveCalls };
 }
 
 async function run() {
@@ -41,7 +59,7 @@ async function run() {
     if (String(url).includes('/textsearch/')) {
       const parsed = new URL(String(url));
       const query = parsed.searchParams.get('query');
-      assert.match(query, /luxury/i);
+      assert.match(query, /luxury|modern/i);
       assert.match(query, /1600/);
       assert.match(query, /concord/i);
       return {
@@ -123,6 +141,40 @@ async function run() {
     assert.equal(savedResults.length, 1);
     assert(urls.some((url) => url.includes('/textsearch/')));
     assert(urls.some((url) => url.includes('/details/')));
+
+    urls.length = 0;
+    const recovery = await loadHandler({
+      lead: {
+        preferred_city: 'Concord, NC',
+        rent_budget: 1600,
+        beds_needed: '1',
+      },
+      entitlements: {
+        paid27: false,
+        purchasedCategory: null,
+      },
+      upsellIntent: {
+        id: 'pi_modern_upsell',
+        status: 'succeeded',
+        metadata: { leadId: 'lead_123', product: 'modern', category: 'modern' },
+        customer: 'cus_test',
+        payment_method: 'pm_test',
+      },
+    });
+    const recoveryRes = await recovery.handler({
+      httpMethod: 'GET',
+      queryStringParameters: {
+        leadId: 'lead_123',
+        category: 'modern',
+        upsellPaymentIntentId: 'pi_modern_upsell',
+      },
+    });
+    const recoveryBody = JSON.parse(recoveryRes.body);
+
+    assert.equal(recoveryRes.statusCode, 200);
+    assert.equal(recoveryBody.ok, true);
+    assert.equal(recoveryBody.criteria.category, 'modern');
+    assert.deepEqual(recovery.retrieveCalls, ['pi_modern_upsell']);
   } finally {
     global.fetch = oldFetch;
     if (oldGoogleKey === undefined) delete process.env.GOOGLE_PLACES_API_KEY;
